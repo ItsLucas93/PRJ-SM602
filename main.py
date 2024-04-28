@@ -7,6 +7,7 @@ Version de Python: 3.12
 
 from termcolor import colored
 
+from algorithms.northwest import northwest
 from display_tab import display_tab_matrix
 from file_manager import files_list, read_file
 
@@ -103,10 +104,12 @@ def menu_choix_tableau(choix=-1):
 
 def menu_choix_algorithme(choix_tableau, choix):
     tab_matrix = read_file(choix_tableau)
-
-    display_tab_matrix(tab_matrix, choix)
+    # print(tab_matrix)
 
     if tab_matrix is not None:
+        display_tab_matrix(tab_matrix, choix_tableau)
+        input(colored("Appuyez sur une touche pour continuer...", "magenta"))
+
         # Choix de l'algorithme
         choices = {0: "Retour au menu précédent", 1: "Algorithme de Nord-Ouest", 2: "Algorithme de Ballas-Hammer"}
         str_choices = "\n"
@@ -124,9 +127,14 @@ def menu_choix_algorithme(choix_tableau, choix):
                         break
                     case 1:
                         print("Algorithme de Nord-Ouest")
+                        northwest_matrix = northwest(tab_matrix)
+                        # print(northwest_matrix)
+                        display_tab_matrix(northwest_matrix, choix_tableau)
+                        input(colored("Appuyez sur une touche pour continuer...", "magenta"))
                         break
                     case 2:
                         print("Algorithme de Ballas-Hammer")
+                        input(colored("Appuyez sur une touche pour continuer...", "magenta"))
                         break
                     case _:
                         print(colored("Le choix n'a pas été reconnue.", "red"))
