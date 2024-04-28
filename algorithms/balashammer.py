@@ -22,6 +22,7 @@ def balashammer(tab_matrix):
 
     k = 1
     while sum(list_provisions) != 0 and sum(list_orders) != 0:
+        # TODO: DO YOU WANT TO DISPLAY THE TABLE AT EACH ITERATION?
         print(colored("\n* Itération n°" + str(k), attrs=["bold", "underline"]))
         k += 1
 
