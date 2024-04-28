@@ -139,6 +139,7 @@ def menu_choix_algorithme(choix_tableau, choix):
                 print(colored("Une erreur est survenue : " + str(e), "red"))
                 continue
 
+
 # Programme principal
 if __name__ == "__main__":
     try:

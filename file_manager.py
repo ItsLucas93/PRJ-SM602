@@ -10,6 +10,7 @@ from termcolor import colored
 
 folder_path = "tables/"
 
+
 def files_list(path=folder_path):
     """
     * Fonction: files_list
