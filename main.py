@@ -83,6 +83,11 @@ def menu_choix_tableau(choix=-1):
                 # Traitement du fichier
                 elif choix in index_test_files.keys():
                     menu_choix_algorithme(index_test_files[choix], choix)
+
+                    # Retour au menu
+                    print("---------------------- Menu Graphe ----------------------"
+                          + string_test_files +
+                          "----------------------------------------------------------")
                 # Choix non reconnu
                 else:
                     print(colored("Le choix " + str(choix) + " n'a pas été reconnue.", "red"))
@@ -98,7 +103,41 @@ def menu_choix_tableau(choix=-1):
 
 def menu_choix_algorithme(choix_tableau, choix):
     tab_matrix = read_file(choix_tableau)
+
     display_tab_matrix(tab_matrix, choix)
+
+    if tab_matrix is not None:
+        # Choix de l'algorithme
+        choices = {0: "Retour au menu précédent", 1: "Algorithme de Nord-Ouest", 2: "Algorithme de Ballas-Hammer"}
+        str_choices = "\n"
+        for i in choices:
+            str_choices += str(i) + ".\t" + choices[i] + "\n"
+        print("---------------------- Menu Algorithme ----------------------"
+              + str_choices +
+              "----------------------------------------------------------")
+        while True:
+            try:
+                # Demande de choix
+                choix = int(input(colored("Entrez le numéro de l'algorithme à utiliser : ", "magenta")))
+                match choix:
+                    case 0:
+                        break
+                    case 1:
+                        print("Algorithme de Nord-Ouest")
+                        break
+                    case 2:
+                        print("Algorithme de Ballas-Hammer")
+                        break
+                    case _:
+                        print(colored("Le choix n'a pas été reconnue.", "red"))
+            except KeyError:
+                print(colored("Le choix " + str(choix) + " n'a pas été reconnue.", "red"))
+            except ValueError:
+                print(colored("Veuillez entrer un nombre entier valide.", "red"))
+                continue
+            except Exception as e:
+                print(colored("Une erreur est survenue : " + str(e), "red"))
+                continue
 
 # Programme principal
 if __name__ == "__main__":
