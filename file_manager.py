@@ -66,20 +66,27 @@ def tab_to_matrix(file, path=folder_path):
     list_provisions = []
     list_orders = []
 
-    with open(path + file, 'r') as file:
-        n, m = map(int, file.readline().strip().split())
+    try:
+        with open(path + file, 'r') as file:
+            n, m = map(int, file.readline().strip().split())
 
-        # Ajout de la matrice des coûts, avec en dernière position les provisions
-        for i in range(n):
-            line = file.readline().strip()
-            line = list(map(int, line.split()))
-            temp = []
-            for j in range(len(line) - 1):
-                temp.append([0, line[j]])
-            matrix_cost.append(temp)
-            list_provisions.append(line[-1])
+            # Ajout de la matrice des coûts, avec en dernière position les provisions
+            for i in range(n):
+                line = file.readline().strip()
+                line = list(map(int, line.split()))
+                temp = []
+                for j in range(len(line) - 1):
+                    temp.append([0, line[j]])
+                matrix_cost.append(temp)
+                list_provisions.append(line[-1])
 
-        # Dernière ligne : Ajout des commandes
-        list_orders = list(map(int, file.readline().strip().split()))
+            # Dernière ligne : Ajout des commandes
+            list_orders = list(map(int, file.readline().strip().split()))
 
-    return [matrix_cost, list_provisions, list_orders]
+        return [matrix_cost, list_provisions, list_orders]
+    except FileNotFoundError:
+        print(colored("Le fichier " + file + " n'a pas été trouvé.", "red"))
+        return None
+    except Exception as e:
+        print(colored("Une erreur est survenue : " + str(e), "red"))
+        return None
