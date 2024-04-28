@@ -127,14 +127,14 @@ def menu_choix_algorithme(choix_tableau, choix):
                     case 0:
                         break
                     case 1:
-                        print("Algorithme de Nord-Ouest")
+                        print(colored("* Algorithme de Nord-Ouest", attrs=["bold", "underline"]))
                         northwest_matrix = northwest(tab_matrix)
                         # print(northwest_matrix)
                         display_tab_matrix(northwest_matrix, choix_tableau)
                         input(colored("Appuyez sur une touche pour continuer...", "magenta"))
                         break
                     case 2:
-                        print("Algorithme de Ballas-Hammer")
+                        print(colored("* Algorithme de Ballas-Hammer", attrs=["bold", "underline"]))
                         balas_hammer_matrix = balashammer(tab_matrix)
                         # print(balas_hammer_matrix)
                         display_tab_matrix(balas_hammer_matrix, choix_tableau)
