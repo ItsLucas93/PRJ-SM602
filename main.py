@@ -8,6 +8,7 @@ Version de Python: 3.12
 from termcolor import colored
 
 from algorithms.northwest import northwest
+from algorithms.balashammer import balashammer
 from display_tab import display_tab_matrix
 from file_manager import files_list, read_file
 
@@ -134,6 +135,9 @@ def menu_choix_algorithme(choix_tableau, choix):
                         break
                     case 2:
                         print("Algorithme de Ballas-Hammer")
+                        balas_hammer_matrix = balashammer(tab_matrix)
+                        # print(balas_hammer_matrix)
+                        display_tab_matrix(balas_hammer_matrix, choix_tableau)
                         input(colored("Appuyez sur une touche pour continuer...", "magenta"))
                         break
                     case _:
