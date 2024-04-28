@@ -8,7 +8,8 @@ Version de Python : 3.12
 from termcolor import colored
 from tabulate import tabulate
 
-def display_tab_matrix(tab_matrix, tab_num, option =""):
+
+def display_tab_matrix(tab_matrix, tab_num, option="", optionvalue=[]):
     """
     * Fonction: display_tab_matrix
     * --------------------
@@ -17,16 +18,46 @@ def display_tab_matrix(tab_matrix, tab_num, option =""):
     * :param option: Option pour l'affichage
     """
     if tab_matrix is not None:
-        SUB = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
-        header = [str(tab_num)] + [colored("C" + str(i + 1).translate(SUB), "cyan", attrs=["bold"]) for i in range(len(tab_matrix[0][0]))] + [colored("Provisions Pᵢ", "green", attrs=["bold"])]
+        if option == "balas_hammer":
+            SUB = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
+            header = [str(tab_num)] + [colored("C" + str(i + 1).translate(SUB), "cyan", attrs=["bold"]) for i in range(len(tab_matrix[0][0]))] + [colored("Provisions Pᵢ", "green", attrs=["bold"])] + [colored("Pénalités", "red", attrs=["bold"])]
 
-        body = []
-        for i in range(len(tab_matrix[0])):
-            body.append([colored("P" + str(i + 1).translate(SUB), "cyan", attrs=["bold"])])
-            for j in range(len(tab_matrix[0][i])):
-                body[i].append(str(tab_matrix[0][i][j][0]) + " " + colored(str(tab_matrix[0][i][j][1]).translate(SUB), "green" ))
-            body[i].append(tab_matrix[1][i])
+            body = []
+            for i in range(len(tab_matrix[0])):
+                body.append([colored("P" + str(i + 1).translate(SUB), "cyan", attrs=["bold"])])
+                for j in range(len(tab_matrix[0][i])):
+                    body[i].append(
+                        str(tab_matrix[0][i][j][0]) + " " + colored(str(tab_matrix[0][i][j][1]).translate(SUB), "green"))
+                body[i].append(tab_matrix[1][i])
+                if optionvalue[0]:
+                    if optionvalue[0][i] == '-':
+                        body[i].append(colored(optionvalue[0][i], "dark_grey"))
+                    else:
+                        body[i].append(colored(optionvalue[0][i], "red"))
 
-        body.append([colored("Commandes Cᵢ", "green", attrs=["bold"])] + [str(tab_matrix[2][i]) for i in range(len(tab_matrix[2]))] + [""])
+            body.append([colored("Commandes Cᵢ", "green", attrs=["bold"])] + [str(tab_matrix[2][i]) for i in range(len(tab_matrix[2]))] + [""])
 
-        print(tabulate(body, headers=header, tablefmt="mixed_grid", numalign="center", stralign="center"))
+            if optionvalue[1]:
+                body.append([colored("Pénalités", "red", attrs=["bold"])])
+                for i in range (len(optionvalue[1])):
+                    if optionvalue[1][i] == '-':
+                        body[-1].append(colored(optionvalue[1][i], "dark_grey"))
+                    else:
+                        body[-1].append(colored(optionvalue[1][i], "red"))
+                body[-1].append("")
+
+            print(tabulate(body, headers=header, tablefmt="mixed_grid", numalign="center", stralign="center"))
+        else:
+            SUB = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
+            header = [str(tab_num)] + [colored("C" + str(i + 1).translate(SUB), "cyan", attrs=["bold"]) for i in range(len(tab_matrix[0][0]))] + [colored("Provisions Pᵢ", "green", attrs=["bold"])]
+
+            body = []
+            for i in range(len(tab_matrix[0])):
+                body.append([colored("P" + str(i + 1).translate(SUB), "cyan", attrs=["bold"])])
+                for j in range(len(tab_matrix[0][i])):
+                    body[i].append(str(tab_matrix[0][i][j][0]) + " " + colored(str(tab_matrix[0][i][j][1]).translate(SUB), "green"))
+                body[i].append(tab_matrix[1][i])
+
+            body.append([colored("Commandes Cᵢ", "green", attrs=["bold"])] + [str(tab_matrix[2][i]) for i in range(len(tab_matrix[2]))] + [""])
+
+            print(tabulate(body, headers=header, tablefmt="mixed_grid", numalign="center", stralign="center"))
