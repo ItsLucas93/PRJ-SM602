@@ -20,10 +20,16 @@ def balashammer(tab_matrix):
     list_provisions = [tab_matrix[1][i] for i in range(0, num_provisions)]
     list_orders = [tab_matrix[2][j] for j in range(0, num_orders)]
 
+    confirm = None
     k = 1
     while sum(list_provisions) != 0 and sum(list_orders) != 0:
-        # TODO: DO YOU WANT TO DISPLAY THE TABLE AT EACH ITERATION?
-        print(colored("\n* Itération n°" + str(k), attrs=["bold", "underline"]))
+        while confirm not in ['y', 'n']:
+            confirm = input(colored("Souhaitez-vous afficher les itérations ? (y/n)... ", "magenta"))
+            if confirm not in ['y', 'n']:
+                print(colored("Le choix n'a pas été reconnue.", "red"))
+
+        if confirm == 'y':
+            print(colored("\n* Itération n°" + str(k), attrs=["bold", "underline"]))
         k += 1
 
         penalties = []
@@ -49,19 +55,21 @@ def balashammer(tab_matrix):
         min_quantity, min_index = float('inf'), -1
 
         # Affichage à chaque étape
-        print_penalty = [[], []]
-        for penalty in range(len(penalties)):
-            match penalties[penalty][2]:
-                case "row":
-                    print_penalty[0].append(penalties[penalty][0])
-                case "column":
-                    print_penalty[1].append(penalties[penalty][0])
-                case None:
-                    if penalty < num_provisions:
-                        print_penalty[0].append("-")
-                    else:
-                        print_penalty[1].append("-")
-        display_tab_matrix([balas_hammer_matrix, tab_matrix[1], tab_matrix[2]], "Balas-Hammer", option="balas_hammer", optionvalue=print_penalty)
+        if confirm == 'y':
+            print_penalty = [[], [], [], []]
+            for penalty in range(len(penalties)):
+                match penalties[penalty][2]:
+                    case "row":
+                        print_penalty[0].append(penalties[penalty][0])
+                    case "column":
+                        print_penalty[1].append(penalties[penalty][0])
+                    case None:
+                        if penalty < num_provisions:
+                            print_penalty[0].append("-")
+                        else:
+                            print_penalty[1].append("-")
+                print_penalty[3] = [max_penalty, max_index, mode]
+            display_tab_matrix([balas_hammer_matrix, tab_matrix[1], tab_matrix[2]], "Balas-Hammer", option="balas_hammer", optionvalue=print_penalty)
 
         match mode:
             case "row":
@@ -92,19 +100,21 @@ def balashammer(tab_matrix):
                 pass
 
         # Affichage à chaque étape
-        print_penalty = [[], []]
-        for penalty in range(len(penalties)):
-            match penalties[penalty][2]:
-                case "row":
-                    print_penalty[0].append(penalties[penalty][0])
-                case "column":
-                    print_penalty[1].append(penalties[penalty][0])
-                case None:
-                    if penalty < num_provisions:
-                        print_penalty[0].append("-")
-                    else:
-                        print_penalty[1].append("-")
-        display_tab_matrix([balas_hammer_matrix, tab_matrix[1], tab_matrix[2]], "Balas-Hammer", option="balas_hammer", optionvalue=print_penalty)
+        if confirm == 'y':
+            print_penalty = [[], [], [], []]
+            for penalty in range(len(penalties)):
+                match penalties[penalty][2]:
+                    case "row":
+                        print_penalty[0].append(penalties[penalty][0])
+                    case "column":
+                        print_penalty[1].append(penalties[penalty][0])
+                    case None:
+                        if penalty < num_provisions:
+                            print_penalty[0].append("-")
+                        else:
+                            print_penalty[1].append("-")
+            print_penalty[2] = [min_index, max_index, mode]
+            display_tab_matrix([balas_hammer_matrix, tab_matrix[1], tab_matrix[2]], "Balas-Hammer", option="balas_hammer", optionvalue=print_penalty)
 
     # Réinitialisation des coûts à l'original
     for i in range(num_provisions):
