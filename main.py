@@ -9,6 +9,7 @@ from termcolor import colored
 
 from algorithms.northwest import northwest
 from algorithms.balashammer import balashammer
+from algorithms.totalcost import totalcost
 from display_tab import display_tab_matrix
 from file_manager import files_list, read_file
 
@@ -131,6 +132,8 @@ def menu_choix_algorithme(choix_tableau, choix):
                         northwest_matrix = northwest(tab_matrix)
                         # print(northwest_matrix)
                         display_tab_matrix(northwest_matrix, choix_tableau)
+                        matrixtotalcost = totalcost(northwest_matrix)
+                        print(colored("* Le coût total de la proposition de transport est de " + str(matrixtotalcost) + ".", "white"))
                         input(colored("Appuyez sur une touche pour continuer...", "magenta"))
                         break
                     case 2:
@@ -138,6 +141,8 @@ def menu_choix_algorithme(choix_tableau, choix):
                         balas_hammer_matrix = balashammer(tab_matrix)
                         # print(balas_hammer_matrix)
                         display_tab_matrix(balas_hammer_matrix, choix_tableau)
+                        matrixtotalcost = totalcost(balas_hammer_matrix)
+                        print(colored("* Le coût total de la proposition de transport est de " + str(matrixtotalcost) + ".", "white"))
                         input(colored("Appuyez sur une touche pour continuer...", "magenta"))
                         break
                     case _:
