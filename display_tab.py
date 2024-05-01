@@ -18,7 +18,31 @@ def display_tab_matrix(tab_matrix, tab_num, option="", optionvalue=[]):
     * :param option: Option pour l'affichage
     """
     if tab_matrix is not None:
-        if option == "balas_hammer":
+        if option == "potential":
+            P = len(tab_matrix[0])
+            C = len(tab_matrix[1])
+            header = [str(tab_num)] + [colored("C" + str(i + 1), "cyan", attrs=["bold"]) for i in range(C)]
+            body = []
+
+            for i in range(P):
+                body.append([colored("P" + str(i + 1), "cyan", attrs=["bold"])])
+                for j in range(C):
+                    body[i].append(tab_matrix[i][j])
+
+            print(tabulate(body, headers=header, tablefmt="mixed_grid", numalign="center", stralign="center"))
+        elif option == "marginal":
+            P = len(tab_matrix[0])
+            C = len(tab_matrix[1])
+            header = [str(tab_num)] + [colored("C" + str(i + 1), "cyan", attrs=["bold"]) for i in range(C)]
+            body = []
+
+            for i in range(P):
+                body.append([colored("P" + str(i + 1), "cyan", attrs=["bold"])])
+                for j in range(C):
+                    body[i].append(tab_matrix[i][j])
+
+            print(tabulate(body, headers=header, tablefmt="mixed_grid", numalign="center", stralign="center"))
+        elif option == "balas_hammer":
             SUB = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
             header = [str(tab_num)] + [colored("C" + str(i + 1).translate(SUB), "cyan", attrs=["bold"]) for i in range(len(tab_matrix[0][0]))] + [colored("Provisions Pᵢ", "green", attrs=["bold"])] + [colored("Pénalités", "red", attrs=["bold"])]
 
