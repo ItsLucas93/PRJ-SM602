@@ -122,7 +122,7 @@ def balashammer(tab_matrix):
             if balas_hammer_matrix[i][j][1] == -1:
                 balas_hammer_matrix[i][j][1] = tab_matrix[0][i][j][1]
 
-    print(colored("\n* Fin en n°" + str(k) + " itérations.", attrs=["bold", "underline"]))
+    print(colored("\n* Fin en " + str(k) + " itérations.", attrs=["bold", "underline"]))
     return [balas_hammer_matrix, tab_matrix[1], tab_matrix[2]]
 
 
