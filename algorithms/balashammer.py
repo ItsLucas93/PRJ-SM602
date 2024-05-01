@@ -5,7 +5,6 @@ Description: Ce fichier contient l'algorithme de Balas-Hammer
 Version de Python: 3.12
 """
 
-from tabulate import tabulate
 from termcolor import colored
 from display_tab import display_tab_matrix
 
@@ -35,7 +34,7 @@ def balashammer(tab_matrix):
         penalties = []
 
         for i in range(num_provisions):
-            row = [tab_matrix[0][i][j][1] for j in range(num_orders) if list_provisions[i] > 0 if balas_hammer_matrix[i][j][1] > -1]
+            row = [tab_matrix[0][i][j][1] for j in range(num_orders) if list_provisions[i] > 0 if list_orders[j] > 0]
             if len(row) > 1:
                 row = sorted(row)
                 penalties.append((row[1] - row[0], i, "row"))
@@ -43,7 +42,7 @@ def balashammer(tab_matrix):
                 penalties.append((float('-inf'), i, None))
 
         for j in range(num_orders):
-            column = [tab_matrix[0][i][j][1] for i in range(num_provisions) if list_orders[j] > 0 if balas_hammer_matrix[i][j][1] > -1]
+            column = [tab_matrix[0][i][j][1] for i in range(num_provisions) if list_orders[j] > 0 if list_provisions[i] > 0]
             if len(column) > 1:
                 column = sorted(column)
                 penalties.append((column[1] - column[0], j, "column"))
@@ -51,9 +50,45 @@ def balashammer(tab_matrix):
                 penalties.append((float('-inf'), j, None))
 
         # Max Penalty
-        max_penalty, max_index, mode = max_penalties(penalties)
-        min_quantity, min_index = float('inf'), -1
+        candidates = max_penalties(penalties)
 
+        if len(candidates) == 1:
+            if candidates[0][0] == float('-inf'):
+                for i in range(num_provisions):
+                    if list_provisions[i] > 0:
+                        max_penalty, max_index, mode = 0, i, "row"
+                    elif list_orders[i] > 0:
+                        max_penalty, max_index, mode = 0, i, "column"
+            else:
+                max_penalty, max_index, mode = candidates[0][0], candidates[0][1], candidates[0][2]
+        else:
+            final_candidates = []
+            min_cost_index = 0
+            min_cost = -1
+            for penalty, index, mode in candidates:
+                if mode == "row":
+                    for i in range(num_orders):
+                        if list_provisions[index] > 0 and list_orders[i] > 0:
+                            if tab_matrix[0][index][i][1] < min_cost or min_cost == -1:
+                                min_cost_index = i
+                                min_cost = tab_matrix[0][index][i][1]
+                    final_candidates.append(min(list_orders[min_cost_index], list_provisions[index]))
+                elif mode == "column":
+                    for j in range(num_provisions):
+                        if list_orders[index] > 0 and list_provisions[j] > 0:
+                            if tab_matrix[0][j][index][1] < min_cost or min_cost == -1:
+                                min_cost_index = j
+                                min_cost = tab_matrix[0][j][index][1]
+                    final_candidates.append([min(list_provisions[min_cost_index], list_orders[index]), min_cost])
+
+            # Choix du maximum, si plusieurs candidats à égalité, on prend le coût minimum
+            if len(candidates) > 1:
+                max_penalty, max_index, mode = resolve_ties(candidates, tab_matrix, list_provisions, list_orders)
+            else:
+                max_penalty, max_index, mode = candidates[0][0], candidates[0][1], candidates[0][2]
+
+        min_quantity, min_index = float('inf'), -1
+        # input(colored("Appuyez sur une touche pour continuer...", "magenta"))
         # Affichage à chaque étape
         if confirm == 'y':
             print_penalty = [[], [], [], []]
@@ -81,9 +116,6 @@ def balashammer(tab_matrix):
                 balas_hammer_matrix[max_index][min_index][0] += quantity
                 list_provisions[max_index] -= quantity
                 list_orders[min_index] -= quantity
-                if list_provisions[max_index] == 0:
-                    for j in range(num_orders):
-                        balas_hammer_matrix[max_index][j][1] = -1
             case "column":
                 for i in range(num_provisions):
                     if list_provisions[i] > 0 and tab_matrix[0][i][max_index][1] < min_quantity:
@@ -93,9 +125,6 @@ def balashammer(tab_matrix):
                 balas_hammer_matrix[min_index][max_index][0] += quantity
                 list_provisions[min_index] -= quantity
                 list_orders[max_index] -= quantity
-                if list_orders[max_index] == 0:
-                    for i in range(num_provisions):
-                        balas_hammer_matrix[i][max_index][1] = -1
             case _:
                 pass
 
@@ -116,23 +145,44 @@ def balashammer(tab_matrix):
             print_penalty[2] = [min_index, max_index, mode]
             display_tab_matrix([balas_hammer_matrix, tab_matrix[1], tab_matrix[2]], "Balas-Hammer", option="balas_hammer", optionvalue=print_penalty)
 
-    # Réinitialisation des coûts à l'original
-    for i in range(num_provisions):
-        for j in range(num_orders):
-            if balas_hammer_matrix[i][j][1] == -1:
-                balas_hammer_matrix[i][j][1] = tab_matrix[0][i][j][1]
-
     print(colored("\n* Fin en " + str(k) + " itérations.", attrs=["bold", "underline"]))
     return [balas_hammer_matrix, tab_matrix[1], tab_matrix[2]]
 
 
 def max_penalties(penalties):
+    candidates = []
     max_penalty = float('-inf')
     max_index = -1
     mode = None
     for i in range(len(penalties)):
-        if penalties[i][0] > max_penalty:
+        if penalties[i][0] >= max_penalty and penalties[i][0] > 0:
+            if penalties[i][0] > max_penalty:
+                candidates = []
             max_penalty = penalties[i][0]
             max_index = penalties[i][1]
             mode = penalties[i][2]
-    return max_penalty, max_index, mode
+            candidates.append([max_penalty, max_index, mode])
+
+    if not candidates:
+        candidates.append([max_penalty, max_index, mode])
+    return candidates
+
+
+def resolve_ties(candidates, tab_matrix, list_provisions, list_orders):
+    min_cost = float('inf')
+    selected_candidate = None
+    for penalty, index, mode in candidates:
+        if mode == "row":
+            costs = [tab_matrix[0][index][j][1] for j in range(len(list_orders)) if list_orders[j] > 0]
+        elif mode == "column":
+            costs = [tab_matrix[0][i][index][1] for i in range(len(list_provisions)) if list_provisions[i] > 0]
+        else:
+            continue
+
+        local_min = min(costs) if costs else float('inf')
+
+        if local_min < min_cost:
+            min_cost = local_min
+            selected_candidate = (penalty, index, mode)
+
+    return selected_candidate
