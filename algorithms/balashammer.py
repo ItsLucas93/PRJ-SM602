@@ -57,8 +57,9 @@ def balashammer(tab_matrix):
                 for i in range(num_provisions):
                     if list_provisions[i] > 0:
                         max_penalty, max_index, mode = 0, i, "row"
-                    elif list_orders[i] > 0:
-                        max_penalty, max_index, mode = 0, i, "column"
+                for j in range(num_orders):
+                    if list_orders[j] > 0:
+                        max_penalty, max_index, mode = 0, j, "column"
             else:
                 max_penalty, max_index, mode = candidates[0][0], candidates[0][1], candidates[0][2]
         else:
