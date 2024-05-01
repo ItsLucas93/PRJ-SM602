@@ -9,6 +9,7 @@ from termcolor import colored
 
 from algorithms.northwest import northwest
 from algorithms.balashammer import balashammer
+from algorithms.steppingstone import *
 from algorithms.totalcost import totalcost
 from display_tab import display_tab_matrix
 from file_manager import files_list, read_file
@@ -135,7 +136,8 @@ def menu_choix_algorithme(choix_tableau, choix):
                         matrixtotalcost = totalcost(northwest_matrix)
                         print(colored("* Le coût total de la proposition de transport est de " + str(matrixtotalcost) + ".", "white"))
                         input(colored("Appuyez sur une touche pour continuer...", "magenta"))
-                        break
+
+                        steppingstone(northwest_matrix)
                     case 2:
                         print(colored("* Algorithme de Ballas-Hammer", attrs=["bold", "underline"]))
                         balas_hammer_matrix = balashammer(tab_matrix)
@@ -144,9 +146,12 @@ def menu_choix_algorithme(choix_tableau, choix):
                         matrixtotalcost = totalcost(balas_hammer_matrix)
                         print(colored("* Le coût total de la proposition de transport est de " + str(matrixtotalcost) + ".", "white"))
                         input(colored("Appuyez sur une touche pour continuer...", "magenta"))
-                        break
+
+                        steppingstone(balas_hammer_matrix)
                     case _:
                         print(colored("Le choix n'a pas été reconnue.", "red"))
+                        continue
+                break
             except KeyError:
                 print(colored("Le choix " + str(choix) + " n'a pas été reconnue.", "red"))
             except ValueError:
