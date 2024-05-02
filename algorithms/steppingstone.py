@@ -30,29 +30,29 @@ def steppingstone(tab_matrix):
         # Affichage de la proposition de transport initiale
         print(totalcost([tab_matrix, list_provisions, list_orders]))
 
+        components = find_connected_components(graph)
+        if len(components) > 1:
+            print("The graph is not connected. Connecting the graph...")
+            graph = connect_graph_components(graph, components, tab_matrix)
+
         while True:
-            # Check if the graph is connected
-
-
             # Find a cycle in the graph
             cycle = bfs_detect_cycle(graph, 'P1')
-            print(cycle)
+            print("Cycle found:", cycle)
 
+            print(graph)
             # Calculate potentials
-            potentials_dict = calculate_potentials(tab_matrix, num_provisions, num_orders)
-            print(potentials_dict)
-
-            potentials_list = separate_potentials(potentials_dict)
-            print(potentials_list)
+            potentials_dict = calculate_potentials(tab_matrix, num_provisions, num_orders, graph)
+            print("Potentials:", potentials_dict)
 
             # Calculate the matrix of potential costs
             matrix_potential = matrix_potential_cost(potentials_dict, num_provisions, num_orders)
-            print(matrix_potential)
+            print("Potential cost matrix: ", matrix_potential)
             display_tab_matrix(matrix_potential, "Potential", "potential")
 
             # Calculate marginal costs
             matrix_marginal = matrix_marginal_cost(tab_matrix, matrix_potential, num_provisions, num_orders)
-            print(matrix_marginal)
+            print("Marginal cost matrix: ", matrix_marginal)
             display_tab_matrix(matrix_marginal, "Marginal", "marginal")
 
             # Proposition optimale ?
@@ -61,7 +61,7 @@ def steppingstone(tab_matrix):
                 best_edge = find_best_improving_edge(matrix_marginal)
                 if best_edge is not None:
                     print(f"Best edge to improve: P{best_edge[0] + 1}C{best_edge[1] + 1}")
-                    improve_transport_proposal(tab_matrix, num_provisions, num_orders, best_edge, source_map, destination_map)
+                    improve_transport_proposal(tab_matrix, graph, best_edge, source_map, destination_map)
             else:
                 print("Optimal solution found.")
                 break
@@ -74,7 +74,7 @@ def steppingstone(tab_matrix):
         return None
 
 
-def calculate_potentials(tab_matrix, num_provisions, num_orders):
+def calculate_potentials(tab_matrix, num_provisions, num_orders, graph={}):
     # Initial potential values (can initialize arbitrarily, here setting source 1 to potential 0)
     potentials = {'C1': 0}
 
@@ -86,7 +86,7 @@ def calculate_potentials(tab_matrix, num_provisions, num_orders):
         for i in range(num_provisions):
             if 'P' + str(i + 1) in potentials:
                 for j in range(num_orders):
-                    if tab_matrix[i][j][0] > 0:
+                    if tab_matrix[i][j][0] > 0 or (f'P{i + 1}' in graph and f'C{j + 1}' in graph[f'P{i + 1}']):
                         cost = tab_matrix[i][j][1]
                         if 'C' + str(j + 1) not in potentials:
                             # print(potentials)
@@ -284,15 +284,16 @@ def detect_cycle_including_edge(graph, start_vertex, end_vertex):
     return None  # No cycle found that includes the given edge
 
 
-def improve_transport_proposal(tab_matrix, num_provisions, num_orders, best_edge, source_map, destination_map):
-    # Extract and prepare the graph
-    graph = extract_graph(tab_matrix, num_provisions, num_orders)
+def improve_transport_proposal(tab_matrix, graph, best_edge, source_map, destination_map):
+    # Deep copy of graph to avoid modifying the original
+    graph = {vertex: neighbors[:] for vertex, neighbors in graph.items()}
 
     # Temporarily modify the graph to include the potential edge for cycle detection
     start_vertex, end_vertex = f'C{best_edge[1] + 1}', f'P{best_edge[0] + 1}'
     graph[start_vertex].append(end_vertex)
     graph[end_vertex].append(start_vertex)
 
+    print(graph)
     # Detect cycle including the temporary edge
     cycle = detect_cycle_including_edge(graph, start_vertex, end_vertex)
 
@@ -366,8 +367,12 @@ def calculate_delta(tab_matrix, ordered_cycle):
         to_node = ordered_cycle[i + 1]
 
         # Extract indices from node labels
-        from_index = int(from_node[1:]) - 1
-        to_index = int(to_node[1:]) - 1
+        if 'P' in from_node and 'C' in to_node:
+            from_index = int(from_node[1:]) - 1
+            to_index = int(to_node[1:]) - 1
+        else:
+            from_index = int(to_node[1:]) - 1
+            to_index = int(from_node[1:]) - 1
 
         # Check if we need to reduce this edge
         if needs_reduction(i):  # Assuming a simple alternation
@@ -437,4 +442,66 @@ def reorder_cycle(graph, cycle, best_edge):
             break
 
     return reordered_cycle
+
+def test_connectivity(graph):
+    components = find_connected_components(graph)
+    if len(components) == 1:
+        print("The graph is connected.")
+    else:
+        print("The graph is not connected. Here are the connected components:")
+        for i, component in enumerate(components, 1):
+            print(f"Component {i}: {component}")
+
+
+def find_connected_components(graph):
+    visited = set()
+    components = []
+
+    # Helper function to perform BFS
+    def bfs(start):
+        queue = [start]
+        connected_component = []
+        while queue:
+            node = queue.pop(0)
+            if node not in visited:
+                visited.add(node)
+                connected_component.append(node)
+                # Enqueue all unvisited adjacent nodes
+                queue.extend([n for n in graph[node] if n not in visited])
+        return connected_component
+
+    # Main loop to start BFS from all unvisited nodes
+    for node in graph:
+        if node not in visited:
+            component = bfs(node)
+            components.append(component)
+
+    return components
+
+
+def connect_graph_components(graph, components, tab_matrix):
+    # This assumes you have a way to identify provision and order nodes
+    # typically by their naming convention (e.g., 'P1', 'C1').
+    for i in range(len(components) - 1):
+        found_connection = False
+        for node_p in components[i]:
+            if node_p.startswith('P'):  # Provision node in component i
+                for node_c in components[i + 1]:
+                    if node_c.startswith('C'):  # Order node in component i+1
+                        # Assume you can connect this provision to this order
+                        if node_p not in graph:
+                            graph[node_p] = []
+                        if node_c not in graph:
+                            graph[node_c] = []
+                        graph[node_p].append(node_c)
+                        graph[node_c].append(node_p)
+                        p_index = int(node_p[1:]) - 1
+                        c_index = int(node_c[1:]) - 1
+                        # print(f"Connecting {node_p} to {node_c}, {tab_matrix[p_index][c_index]}")
+                        found_connection = True
+                        break
+            if found_connection:
+                break
+
+    return graph
 
