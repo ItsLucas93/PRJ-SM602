@@ -29,9 +29,9 @@ def complexity_menu(choice=-1):
             2: 40,
             3: 100,
             4: 400,
-            5: 10000,
-            6: 40000,
-            7: 100000
+            5: 1000,
+            6: 4000,
+            7: 10000
         }
         print("---------------------- Menu de Complexité ----------------------"
               "\n1.\tNorth west"
@@ -53,9 +53,9 @@ def complexity_menu(choice=-1):
                             "\n2.\t40"
                             "\n3.\t100"
                             "\n4.\t400"
-                            "\n5.\t10 000"
-                            "\n6.\t40 000"
-                            "\n7.\t100 000"
+                            "\n5.\t1 000"
+                            "\n6.\t4 000"
+                            "\n7.\t10 000"
                             "\n---------------------------------------------------------------")
                     n = int(input(colored("Choisissez la valeur de n à tester : ", "magenta")))
 
@@ -74,7 +74,7 @@ def complexity_menu(choice=-1):
                                 case 4:
                                     pass
                             end_time = time()
-                            print(colored("Temps d'exécution : " + str(end_time - start_time) + "s", "green"))
+                            # print(colored("Temps d'exécution : " + str(end_time - start_time) + "s", "green"))
 
                             # Enregistrement (ajout) du temps d'exécution dans un fichier
                             with open(folder_path + "/" + choice_dict[choice] + "_" + str(n_dict[n]) + ".txt", 'a') as file:
