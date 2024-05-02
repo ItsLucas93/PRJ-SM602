@@ -19,8 +19,9 @@ def display_tab_matrix(tab_matrix, tab_num, option="", optionvalue=[]):
     """
     if tab_matrix is not None:
         if option == "potential":
-            P = len(tab_matrix[0])
-            C = len(tab_matrix[1])
+            P = len(tab_matrix)
+            C = len(tab_matrix[0])
+            print(P, C, tab_matrix)
             header = [str(tab_num)] + [colored("C" + str(i + 1), "cyan", attrs=["bold"]) for i in range(C)]
             body = []
 
@@ -31,8 +32,8 @@ def display_tab_matrix(tab_matrix, tab_num, option="", optionvalue=[]):
 
             print(tabulate(body, headers=header, tablefmt="mixed_grid", numalign="center", stralign="center"))
         elif option == "marginal":
-            P = len(tab_matrix[0])
-            C = len(tab_matrix[1])
+            P = len(tab_matrix)
+            C = len(tab_matrix[0])
             header = [str(tab_num)] + [colored("C" + str(i + 1), "cyan", attrs=["bold"]) for i in range(C)]
             body = []
 
