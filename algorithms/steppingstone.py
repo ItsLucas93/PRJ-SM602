@@ -31,6 +31,9 @@ def steppingstone(tab_matrix):
         print(totalcost([tab_matrix, list_provisions, list_orders]))
 
         while True:
+            # Check if the graph is connected
+
+
             # Find a cycle in the graph
             cycle = bfs_detect_cycle(graph, 'P1')
             print(cycle)
@@ -329,8 +332,15 @@ def apply_cycle_delta(tab_matrix, ordered_cycle, delta, source_map, destination_
         from_node = ordered_cycle[i]
         to_node = ordered_cycle[i + 1]
 
-        from_index = source_map[from_node] if 'P' in from_node else destination_map[from_node]
-        to_index = destination_map[to_node] if 'C' in to_node else source_map[to_node]
+        if 'P' in from_node and 'C' in to_node:
+            from_index = source_map[from_node] if 'P' in from_node else destination_map[from_node]
+            to_index = destination_map[to_node] if 'C' in to_node else source_map[to_node]
+        else:
+            from_index = source_map[to_node] if 'P' in to_node else destination_map[to_node]
+            to_index = destination_map[from_node] if 'C' in from_node else source_map[from_node]
+
+        print(f"Adjusting shipment from {from_node} to {to_node} by delta {delta}, add: {add}")
+        print(f"Current shipment: {tab_matrix[from_index][to_index][0]}", from_index, to_index)
 
         # Check to ensure we are not subtracting where the shipment is zero or less than delta
         if tab_matrix[from_index][to_index][0] - delta < 0 and not add:
@@ -349,28 +359,32 @@ def apply_cycle_delta(tab_matrix, ordered_cycle, delta, source_map, destination_
             raise ValueError(f"Negative shipment amount detected at edge ({from_node}, {to_node}) after applying delta")
 
 
-def calculate_delta(tab_matrix, cycle):
-    delta = float('inf')
-    # Iterate over edges in the cycle
-    for index in range(len(cycle) - 1):
-        from_node, to_node = int(cycle[index][1:]) - 1, int(cycle[index + 1][1:]) - 1
-        if needs_reduction(cycle, index):
-            shipment = tab_matrix[from_node][to_node][0]
-            print(f"Checking edge from {cycle[index]} to {cycle[index + 1]} with shipment {shipment}")
-            if shipment == 0:
-                continue
-            else:
+def calculate_delta(tab_matrix, ordered_cycle):
+    delta = float('inf')  # Start with the largest possible value
+    for i in range(len(ordered_cycle) - 1):
+        from_node = ordered_cycle[i]
+        to_node = ordered_cycle[i + 1]
+
+        # Extract indices from node labels
+        from_index = int(from_node[1:]) - 1
+        to_index = int(to_node[1:]) - 1
+
+        # Check if we need to reduce this edge
+        if needs_reduction(i):  # Assuming a simple alternation
+            shipment = tab_matrix[from_index][to_index][0]
+            if shipment > 0:  # Consider only positive shipments for reduction
                 delta = min(delta, shipment)
 
-    if delta == float('inf') or delta == 0:
+    if delta == float('inf'):
+        # If delta is still inf, it means no eligible edge was found or all shipments were zero
         print("No positive shipment found for reduction or incorrect cycle path.")
+        return 0  # Returning 0 or another suitable fallback value
+
     return delta
 
 
-def needs_reduction(cycle, index):
-    # Determine the direction of flow and whether reduction is needed
-    # This example assumes a simple alternation of addition and reduction
-    return index % 2 == 0  # Assuming every alternate edge in the cycle needs a reduction
+def needs_reduction(index):
+    return index % 2 == 1
 
 
 def reorder_cycle(graph, cycle, best_edge):
@@ -415,6 +429,12 @@ def reorder_cycle(graph, cycle, best_edge):
     # Close the cycle by appending the start node if necessary
     if reordered_cycle and reordered_cycle[0] != reordered_cycle[-1]:
         reordered_cycle.append(reordered_cycle[0])
+
+    best_edge_tuple = (f'P{best_edge[0] + 1}', f'C{best_edge[1] + 1}')
+    for i in range(len(reordered_cycle) - 1):
+        if reordered_cycle[i] == best_edge_tuple[1] and reordered_cycle[i + 1] == best_edge_tuple[0]:
+            reordered_cycle.reverse()
+            break
 
     return reordered_cycle
 
