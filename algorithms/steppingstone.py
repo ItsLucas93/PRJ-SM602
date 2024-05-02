@@ -30,15 +30,22 @@ def steppingstone(tab_matrix):
         # Affichage de la proposition de transport initiale
         print(totalcost([tab_matrix, list_provisions, list_orders]))
 
-        components = find_connected_components(graph)
-        if len(components) > 1:
-            print("The graph is not connected. Connecting the graph...")
-            graph = connect_graph_components(graph, components, tab_matrix)
-
         while True:
+            components = find_connected_components(graph)
+            if len(components) > 1:
+                print(colored("The graph is not connected. Connecting the graph...", "red"))
+                graph = connect_graph_components(graph, components, tab_matrix)
+            else:
+                print(colored("The graph is connected.", "green"))
+
             # Find a cycle in the graph
             cycle = bfs_detect_cycle(graph, 'P1')
-            print("Cycle found:", cycle)
+            if cycle:
+                print("Cycle found:", cycle)
+                # Transportation maximization if a cycle has been detected. The conditions for each box are displayed. Then we display the deleted edge (possibly several) at the end of maximization.
+                maximize_transportation(tab_matrix, graph, cycle, source_map, destination_map)
+            else:
+                print("No cycle found.")
 
             print(graph)
             # Calculate potentials
@@ -62,6 +69,7 @@ def steppingstone(tab_matrix):
                 if best_edge is not None:
                     print(f"Best edge to improve: P{best_edge[0] + 1}C{best_edge[1] + 1}")
                     improve_transport_proposal(tab_matrix, graph, best_edge, source_map, destination_map)
+                    graph = extract_graph(tab_matrix, num_provisions, num_orders)
             else:
                 print("Optimal solution found.")
                 break
@@ -89,9 +97,9 @@ def calculate_potentials(tab_matrix, num_provisions, num_orders, graph={}):
                     if tab_matrix[i][j][0] > 0 or (f'P{i + 1}' in graph and f'C{j + 1}' in graph[f'P{i + 1}']):
                         cost = tab_matrix[i][j][1]
                         if 'C' + str(j + 1) not in potentials:
-                            # print(potentials)
-                            # print(f"E(P{i + 1}) - E(C{j + 1}) = {cost}")
-                            # print(colored(f"E(C{j + 1}) = E(P{i + 1}) - {cost}", attrs=["bold"]))
+                            print(potentials)
+                            print(f"E(P{i + 1}) - E(C{j + 1}) = {cost}")
+                            print(colored(f"E(C{j + 1}) = E(P{i + 1}) - {cost}", attrs=["bold"]))
                             potentials['C' + str(j + 1)] = potentials['P' + str(i + 1)] - cost
                             changes = True
                         elif potentials['C' + str(j + 1)] != potentials['P' + str(i + 1)] - cost:
@@ -100,7 +108,7 @@ def calculate_potentials(tab_matrix, num_provisions, num_orders, graph={}):
         for j in range(num_orders):
             if 'C' + str(j + 1) in potentials:
                 for i in range(num_provisions):
-                    if tab_matrix[i][j][0] > 0:
+                    if tab_matrix[i][j][0] > 0 or (f'C{j + 1}' in graph and f'P{i + 1}' in graph[f'C{j + 1}']):
                         cost = tab_matrix[i][j][1]
                         if 'P' + str(i + 1) not in potentials:
                             # print(potentials)
@@ -108,12 +116,13 @@ def calculate_potentials(tab_matrix, num_provisions, num_orders, graph={}):
                             # print(colored(f"E(P{i + 1}) = E(C{j + 1}) + {cost}", attrs=["bold"]))
                             potentials['P' + str(i + 1)] = potentials['C' + str(j + 1)] + cost
                             changes = True
+                        # Check for inconsistencies: P(i) - C(j) = cost
                         elif potentials['P' + str(i + 1)] != potentials['C' + str(j + 1)] + cost:
                             print(f"Inconsistency found at P{i+1}")
 
     # Print all calculated potentials
-    # for vertex, potential in potentials.items():
-    #     print(f"Potential for E({vertex}): {potential}")
+    for vertex, potential in potentials.items():
+        print(f"Potential for E({vertex}): {potential}")
 
     return potentials
 
@@ -505,3 +514,61 @@ def connect_graph_components(graph, components, tab_matrix):
 
     return graph
 
+
+def maximize_transportation(tab_matrix, graph, cycle, source_map, destination_map):
+    if not cycle:
+        print("No cycle found. No maximization possible.")
+        return
+
+    print("Cycle detected for maximization: ", cycle)
+
+    # Calculate the minimum shipment in the detected cycle that can be adjusted
+    delta = calculate_delta(tab_matrix, cycle)
+    print(f"Delta for adjustment: {delta}")
+
+    if delta <= 0:
+        print("No adjustment possible, all shipments are at minimum in the cycle.")
+        return
+
+    # Apply the cycle adjustment: alternating between subtraction and addition
+    adjust_shipments(tab_matrix, cycle, delta, source_map, destination_map)
+
+    # Print updated matrix and check for any zero shipments (deleted edges)
+    print("Updated transportation matrix after maximization:")
+    deleted_edges = []
+    for i in range(len(cycle) - 1):
+        from_node = cycle[i]
+        to_node = cycle[i + 1]
+        from_index, to_index = get_indices(from_node, to_node, source_map, destination_map)
+        shipment = tab_matrix[from_index][to_index][0]
+        print(f"{from_node} -> {to_node}: {shipment}")
+        if shipment == 0:
+            deleted_edges.append((from_node, to_node))
+
+    if deleted_edges:
+        print("Deleted edges after maximization:")
+        for edge in deleted_edges:
+            print(f"{edge[0]} -> {edge[1]}")
+    else:
+        print("No edges deleted.")
+
+def get_indices(from_node, to_node, source_map, destination_map):
+    # Helper function to get indices from node labels
+    from_index = source_map.get(from_node, destination_map.get(from_node))
+    to_index = destination_map.get(to_node, source_map.get(to_node))
+    return from_index, to_index
+
+def adjust_shipments(tab_matrix, cycle, delta, source_map, destination_map):
+    # Apply adjustments in a cycle based on calculated delta
+    add = True  # Start with subtraction according to cycle's direction
+    for i in range(len(cycle) - 1):
+        from_node = cycle[i]
+        to_node = cycle[i + 1]
+        from_index, to_index = get_indices(from_node, to_node, source_map, destination_map)
+
+        if add:
+            tab_matrix[from_index][to_index][0] += delta
+        else:
+            tab_matrix[from_index][to_index][0] -= delta
+
+        add = not add  # Alternate between addition and subtraction
