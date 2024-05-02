@@ -6,10 +6,11 @@ Version de Python: 3.12
 """
 
 from termcolor import colored
+
 from display_tab import display_tab_matrix
 
 
-def balashammer(tab_matrix):
+def balashammer(tab_matrix, complexity_calculation=False):
     # Initialisation des variables
     num_provisions = len(tab_matrix[1])
     num_orders = len(tab_matrix[2])
@@ -22,12 +23,15 @@ def balashammer(tab_matrix):
     confirm = None
     k = 1
     while sum(list_provisions) != 0 and sum(list_orders) != 0:
-        while confirm not in ['y', 'n']:
-            confirm = input(colored("Souhaitez-vous afficher les itérations ? (y/n)... ", "magenta"))
-            if confirm not in ['y', 'n']:
-                print(colored("Le choix n'a pas été reconnue.", "red"))
+        if not complexity_calculation:
+            while confirm not in ['y', 'n']:
+                confirm = input(colored("Souhaitez-vous afficher les itérations ? (y/n)... ", "magenta"))
+                if confirm not in ['y', 'n']:
+                    print(colored("Le choix n'a pas été reconnue.", "red"))
+        else:
+            confirm = 'n'
 
-        if confirm == 'y':
+        if confirm == 'y' and not complexity_calculation:
             print(colored("\n* Itération n°" + str(k), attrs=["bold", "underline"]))
         k += 1
 
@@ -105,7 +109,8 @@ def balashammer(tab_matrix):
                         else:
                             print_penalty[1].append("-")
                 print_penalty[3] = [max_penalty, max_index, mode]
-            display_tab_matrix([balas_hammer_matrix, tab_matrix[1], tab_matrix[2]], "Balas-Hammer", option="balas_hammer", optionvalue=print_penalty)
+            if not complexity_calculation:
+                display_tab_matrix([balas_hammer_matrix, tab_matrix[1], tab_matrix[2]], "Balas-Hammer", option="balas_hammer", optionvalue=print_penalty)
 
         match mode:
             case "row":
@@ -144,9 +149,11 @@ def balashammer(tab_matrix):
                         else:
                             print_penalty[1].append("-")
             print_penalty[2] = [min_index, max_index, mode]
-            display_tab_matrix([balas_hammer_matrix, tab_matrix[1], tab_matrix[2]], "Balas-Hammer", option="balas_hammer", optionvalue=print_penalty)
+            if not complexity_calculation:
+                display_tab_matrix([balas_hammer_matrix, tab_matrix[1], tab_matrix[2]], "Balas-Hammer", option="balas_hammer", optionvalue=print_penalty)
 
-    print(colored("\n* Fin en " + str(k) + " itérations.", attrs=["bold", "underline"]))
+    if not complexity_calculation:
+        print(colored("\n* Fin en " + str(k) + " itérations.", attrs=["bold", "underline"]))
     return [balas_hammer_matrix, tab_matrix[1], tab_matrix[2]]
 
 

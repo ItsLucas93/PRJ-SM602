@@ -7,6 +7,7 @@ Version de Python: 3.12
 
 from termcolor import colored
 
+from algorithms.complexity_check import complexity_menu
 from algorithms.northwest import northwest
 from algorithms.balashammer import balashammer
 from algorithms.steppingstone import *
@@ -52,7 +53,8 @@ def menu_principal(choix=0):
     while True:
         print("---------------------- Menu Principal ----------------------"
               "\n1.\tLire un tableau de contraintes sur fichier"
-              "\n2.\tQuitter le programme"
+              "\n2.\tProgramme de complexité"
+              "\n3.\tQuitter le programme"
               "\n----------------------------------------------------------")
         try:
             # Demande de choix
@@ -61,6 +63,8 @@ def menu_principal(choix=0):
                 case 1:
                     menu_choix_tableau()
                 case 2:
+                    complexity_menu()
+                case 3:
                     return True
                 case _:
                     print(colored("Le choix n'a pas été reconnue.", "red"))
