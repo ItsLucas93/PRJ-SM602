@@ -9,6 +9,7 @@ from termcolor import colored
 from algorithms.totalcost import totalcost
 from display_tab import display_tab_matrix
 
+
 def steppingstone(tab_matrix):
     try:
         print(tab_matrix)
@@ -16,13 +17,14 @@ def steppingstone(tab_matrix):
         num_provisions = len(tab_matrix[1])
         num_orders = len(tab_matrix[2])
 
-        source_map = {f'P{i+1}': i for i in range(num_provisions)}
-        destination_map = {f'C{j+1}': j for j in range(num_orders)}
+        source_map = {f'P{i + 1}': i for i in range(num_provisions)}
+        destination_map = {f'C{j + 1}': j for j in range(num_orders)}
 
         # Deep copy of the tab_matrix
         list_provisions = [tab_matrix[1][i] for i in range(0, num_provisions)]
         list_orders = [tab_matrix[2][j] for j in range(0, num_orders)]
-        tab_matrix = [[[tab_matrix[0][i][j][0], tab_matrix[0][i][j][1]] for j in range(0, num_orders)] for i in range(0, num_provisions)]
+        tab_matrix = [[[tab_matrix[0][i][j][0], tab_matrix[0][i][j][1]] for j in range(0, num_orders)] for i in
+                      range(0, num_provisions)]
 
         graph = extract_graph(tab_matrix, num_provisions, num_orders)
         # Affichage de la proposition de transport initiale
@@ -33,7 +35,7 @@ def steppingstone(tab_matrix):
             components = find_connected_components(graph)
             if len(components) > 1:
                 print(colored("The graph is not connected. Connecting the graph...", "red"))
-                graph = connect_graph_components(graph, components, tab_matrix)
+                graph = connect_graph_components(graph, components, tab_matrix, source_map, destination_map)
             else:
                 print(colored("The graph is connected.", "green"))
 
@@ -65,7 +67,8 @@ def steppingstone(tab_matrix):
             # Proposition optimale ?
             if not all(marginal >= 0 for row in matrix_marginal for marginal in row):
                 improved = False
-                for best_edge in sorted(find_all_negative_margins(matrix_marginal), key=lambda x: matrix_marginal[x[0]][x[1]]):
+                for best_edge in sorted(find_all_negative_margins(matrix_marginal),
+                                        key=lambda x: matrix_marginal[x[0]][x[1]]):
                     print(
                         f"Trying edge: P{best_edge[0] + 1}C{best_edge[1] + 1} with marginal cost {matrix_marginal[best_edge[0]][best_edge[1]]}")
                     if improve_transport_proposal(tab_matrix, graph, best_edge, source_map, destination_map):
@@ -94,7 +97,8 @@ def steppingstone(tab_matrix):
 
 
 def find_all_negative_margins(matrix_marginal):
-    return [(i, j) for i in range(len(matrix_marginal)) for j in range(len(matrix_marginal[i])) if matrix_marginal[i][j] < 0]
+    return [(i, j) for i in range(len(matrix_marginal)) for j in range(len(matrix_marginal[i])) if
+            matrix_marginal[i][j] < 0]
 
 
 def calculate_potentials(tab_matrix, num_provisions, num_orders, graph={}):
@@ -126,7 +130,7 @@ def calculate_potentials(tab_matrix, num_provisions, num_orders, graph={}):
                             potentials['C' + str(j + 1)] = potentials['P' + str(i + 1)] - cost
                             changes = True
                         elif potentials['C' + str(j + 1)] != potentials['P' + str(i + 1)] - cost:
-                            print(f"Inconsistency found at C{j+1}")
+                            print(f"Inconsistency found at C{j + 1}")
 
         for j in range(num_orders):
             if 'C' + str(j + 1) in potentials:
@@ -141,7 +145,7 @@ def calculate_potentials(tab_matrix, num_provisions, num_orders, graph={}):
                             changes = True
                         # Check for inconsistencies: P(i) - C(j) = cost
                         elif potentials['P' + str(i + 1)] != potentials['C' + str(j + 1)] + cost:
-                            print(f"Inconsistency found at P{i+1}")
+                            print(f"Inconsistency found at P{i + 1}")
 
     # Print all calculated potentials
     for vertex, potential in potentials.items():
@@ -411,7 +415,7 @@ def calculate_delta(tab_matrix, ordered_cycle):
     if delta == float('inf') or delta <= 0:
         # If delta is still inf, it means no eligible edge was found or all shipments were zero
         print("No positive shipment found for reduction or incorrect cycle path.")
-        return None # Returning 0 or another suitable fallback value
+        return None  # Returning 0 or another suitable fallback value
 
     return delta
 
@@ -471,6 +475,7 @@ def reorder_cycle(graph, cycle, best_edge):
 
     return reordered_cycle
 
+
 def test_connectivity(graph):
     components = find_connected_components(graph)
     if len(components) == 1:
@@ -507,31 +512,47 @@ def find_connected_components(graph):
     return components
 
 
-def connect_graph_components(graph, components, tab_matrix):
-    # This assumes you have a way to identify provision and order nodes
-    # typically by their naming convention (e.g., 'P1', 'C1').
+def connect_graph_components(graph, components, tab_matrix, source_map, destination_map):
+    """
+    Connect disjoint components of the graph with a focus on cost-effectiveness and component significance.
+
+    :param graph: A dictionary where keys are node identifiers and values are lists of connected nodes.
+    :param components: A list of lists, where each sublist is a set of nodes representing a connected component.
+    :param tab_matrix: A matrix representing transport costs and provisions/orders between nodes.
+    :param source_map: Dictionary mapping source labels to their indices.
+    :param destination_map: Dictionary mapping destination labels to their indices.
+    :return: Updated graph with added edges to connect components.
+    """
     for i in range(len(components) - 1):
-        found_connection = False
+        min_cost = float('inf')
+        best_connection = None
+
+        # Evaluate all possible connections between current and next component
         for node_p in components[i]:
-            if node_p.startswith('P'):  # Provision node in component i
+            if node_p.startswith('P'):  # Assuming 'P' denotes a source
                 for node_c in components[i + 1]:
-                    if node_c.startswith('C'):  # Order node in component i+1
-                        # Assume you can connect this provision to this order
-                        if node_p not in graph:
-                            graph[node_p] = []
-                        if node_c not in graph:
-                            graph[node_c] = []
-                        graph[node_p].append(node_c)
-                        graph[node_c].append(node_p)
-                        p_index = int(node_p[1:]) - 1
-                        c_index = int(node_c[1:]) - 1
-                        # print(f"Connecting {node_p} to {node_c}, {tab_matrix[p_index][c_index]}")
-                        found_connection = True
-                        break
-            if found_connection:
-                break
+                    if node_c.startswith('C'):  # Assuming 'C' denotes a destination
+                        # Calculate potential edge cost
+                        p_index = source_map[node_p]
+                        c_index = destination_map[node_c]
+                        edge_cost = tab_matrix[p_index][c_index][1]  # Assuming cost is stored at index 1
+
+                        # Check if this edge offers a lower cost connection
+                        if edge_cost < min_cost:
+                            min_cost = edge_cost
+                            best_connection = (node_p, node_c)
+
+        # Connect the best nodes found with the minimal cost
+        if best_connection:
+            p, c = best_connection
+            graph.setdefault(p, []).append(c)
+            graph.setdefault(c, []).append(p)
+            print(f"Connecting {p} to {c} with cost {min_cost}")
 
     return graph
+
+
+# Additional function calls and setup for source_map, destination_map, and tab_matrix might be needed.
 
 
 def maximize_transportation(tab_matrix, graph, cycle, source_map, destination_map):
@@ -571,11 +592,13 @@ def maximize_transportation(tab_matrix, graph, cycle, source_map, destination_ma
     else:
         print("No edges deleted.")
 
+
 def get_indices(from_node, to_node, source_map, destination_map):
     # Helper function to get indices from node labels
     from_index = source_map.get(from_node, destination_map.get(from_node))
     to_index = destination_map.get(to_node, source_map.get(to_node))
     return from_index, to_index
+
 
 def adjust_shipments(tab_matrix, cycle, delta, source_map, destination_map):
     # Apply adjustments in a cycle based on calculated delta
