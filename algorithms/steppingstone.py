@@ -8,8 +8,6 @@ from termcolor import colored
 
 from algorithms.totalcost import totalcost
 from display_tab import display_tab_matrix
-from collections import deque
-
 
 def steppingstone(tab_matrix):
     try:
@@ -31,6 +29,7 @@ def steppingstone(tab_matrix):
         print(totalcost([tab_matrix, list_provisions, list_orders]))
 
         while True:
+            graph = extract_graph(tab_matrix, num_provisions, num_orders)
             components = find_connected_components(graph)
             if len(components) > 1:
                 print(colored("The graph is not connected. Connecting the graph...", "red"))
@@ -44,6 +43,7 @@ def steppingstone(tab_matrix):
                 print("Cycle found:", cycle)
                 # Transportation maximization if a cycle has been detected. The conditions for each box are displayed. Then we display the deleted edge (possibly several) at the end of maximization.
                 maximize_transportation(tab_matrix, graph, cycle, source_map, destination_map)
+                print("HIT maximize_transportation")
             else:
                 print("No cycle found.")
 
@@ -64,12 +64,23 @@ def steppingstone(tab_matrix):
 
             # Proposition optimale ?
             if not all(marginal >= 0 for row in matrix_marginal for marginal in row):
-                print("Not an optimal solution.")
-                best_edge = find_best_improving_edge(matrix_marginal)
-                if best_edge is not None:
-                    print(f"Best edge to improve: P{best_edge[0] + 1}C{best_edge[1] + 1}")
-                    improve_transport_proposal(tab_matrix, graph, best_edge, source_map, destination_map)
-                    graph = extract_graph(tab_matrix, num_provisions, num_orders)
+                improved = False
+                for best_edge in sorted(find_all_negative_margins(matrix_marginal), key=lambda x: matrix_marginal[x[0]][x[1]]):
+                    print(
+                        f"Trying edge: P{best_edge[0] + 1}C{best_edge[1] + 1} with marginal cost {matrix_marginal[best_edge[0]][best_edge[1]]}")
+                    if improve_transport_proposal(tab_matrix, graph, best_edge, source_map, destination_map):
+                        improved = True
+                        break
+                    """graph = extract_graph(tab_matrix, num_provisions, num_orders)
+                    cycle = bfs_detect_cycle(graph, 'P1')
+                    delta = calculate_delta(tab_matrix, cycle)
+                    if delta:
+                        apply_cycle_delta(tab_matrix, cycle, delta, source_map, destination_map)
+                        improved = True
+                        break"""
+                if not improved:
+                    print("No further improvements possible with any negative margins.")
+                    break
             else:
                 print("Optimal solution found.")
                 break
@@ -77,14 +88,26 @@ def steppingstone(tab_matrix):
             input("Press Enter to continue...")
 
         return [tab_matrix, list_provisions, list_orders]
-    except Exception as e:
+    except ValueError as e:
         print(colored("Une erreur est survenue : " + str(e), "red"))
         return None
 
 
+def find_all_negative_margins(matrix_marginal):
+    return [(i, j) for i in range(len(matrix_marginal)) for j in range(len(matrix_marginal[i])) if matrix_marginal[i][j] < 0]
+
+
 def calculate_potentials(tab_matrix, num_provisions, num_orders, graph={}):
-    # Initial potential values (can initialize arbitrarily, here setting source 1 to potential 0)
-    potentials = {'C1': 0}
+    # Initial potential values - Set the node C with the maximum number of edges to 0
+    potentials = {}
+    max_edges = max(len(edges) for edges in graph.values())
+    for vertex, edges in graph.items():
+        if len(edges) == max_edges:
+            if vertex.startswith('C'):
+                potentials[vertex] = 0
+                break
+    if not potentials:
+        potentials['C1'] = 0
 
     # A simple system to calculate potentials could be based on starting from an arbitrary potential (e.g., P1)
     # and performing a series of updates based on the costs of moving between connected nodes.
@@ -111,9 +134,9 @@ def calculate_potentials(tab_matrix, num_provisions, num_orders, graph={}):
                     if tab_matrix[i][j][0] > 0 or (f'C{j + 1}' in graph and f'P{i + 1}' in graph[f'C{j + 1}']):
                         cost = tab_matrix[i][j][1]
                         if 'P' + str(i + 1) not in potentials:
-                            # print(potentials)
-                            # print(f"E(P{i + 1}) - E(C{j + 1}) = {cost}")
-                            # print(colored(f"E(P{i + 1}) = E(C{j + 1}) + {cost}", attrs=["bold"]))
+                            print(potentials)
+                            print(f"E(P{i + 1}) - E(C{j + 1}) = {cost}")
+                            print(colored(f"E(P{i + 1}) = E(C{j + 1}) + {cost}", attrs=["bold"]))
                             potentials['P' + str(i + 1)] = potentials['C' + str(j + 1)] + cost
                             changes = True
                         # Check for inconsistencies: P(i) - C(j) = cost
@@ -205,42 +228,31 @@ def extract_graph(tab_matrix, num_provisions, num_orders):
 
 
 def bfs_detect_cycle(graph, start_vertex):
-    visited = {}
+    """ Use a BFS to detect a cycle including start node """
+    from collections import deque
+    visited = set()
     parent = {}
-    queue = []
-
-    # Initialize visited and parent dictionaries
-    for vertex in graph:
-        visited[vertex] = False
-        parent[vertex] = None
-
-    # Start BFS from the given start vertex
-    queue.append((start_vertex, None))
+    queue = deque([(start_vertex, None)])
 
     while queue:
-        current, pred = queue.pop(0)  # Dequeue the first element
-
-        if visited[current]:
+        current, pred = queue.popleft()
+        if current in visited:
             continue
-
-        visited[current] = True
-        parent[current] = pred
-
+        visited.add(current)
         for neighbor in graph[current]:
-            if not visited[neighbor]:
+            if neighbor not in visited:
+                parent[neighbor] = current
                 queue.append((neighbor, current))
-            elif neighbor != pred:  # Found a cycle
-                # Cycle detected, print cycle
-                cycle = []
+            elif neighbor != pred:
+                # Cycle found
+                cycle_path = []
                 step = current
                 while step != neighbor:
-                    cycle.append(step)
+                    cycle_path.append(step)
                     step = parent[step]
-                cycle.append(neighbor)
-                cycle.append(current)
-                print("Cycle detected:", cycle)
-                return cycle
-
+                cycle_path.append(neighbor)
+                cycle_path.append(current)
+                return cycle_path
     return None
 
 
@@ -322,17 +334,20 @@ def improve_transport_proposal(tab_matrix, graph, best_edge, source_map, destina
     # Calculate the maximum delta that can be applied to this cycle
     delta = calculate_delta(tab_matrix, ordered_cycle)
     print(f"Maximum delta for the cycle: {delta}")
-    if delta <= 0:
+    if delta is None or delta <= 0:
         print("No positive delta available to optimize the transport.")
-        return
+        return False
 
     # Apply delta adjustments along the reordered cycle
-    apply_cycle_delta(tab_matrix, ordered_cycle, delta, source_map, destination_map)
+    if not apply_cycle_delta(tab_matrix, ordered_cycle, delta, source_map, destination_map):
+        print("Error applying cycle adjustments.")
+        return False
 
     # Print the updated matrix to check improvements
     print("Updated transport matrix with improved cycle:")
     for row in tab_matrix:
         print(row)
+    return True
 
 
 def apply_cycle_delta(tab_matrix, ordered_cycle, delta, source_map, destination_map):
@@ -354,7 +369,8 @@ def apply_cycle_delta(tab_matrix, ordered_cycle, delta, source_map, destination_
 
         # Check to ensure we are not subtracting where the shipment is zero or less than delta
         if tab_matrix[from_index][to_index][0] - delta < 0 and not add:
-            raise ValueError(f"Attempt to subtract delta from an edge with insufficient shipment: {from_node} to {to_node}")
+            print(f"Attempt to subtract delta from an edge with insufficient shipment: {from_node} to {to_node}")
+            return False
 
         # Apply delta
         if add:
@@ -366,7 +382,10 @@ def apply_cycle_delta(tab_matrix, ordered_cycle, delta, source_map, destination_
 
         # Error check moved to a safer place before modification
         if tab_matrix[from_index][to_index][0] < 0:
-            raise ValueError(f"Negative shipment amount detected at edge ({from_node}, {to_node}) after applying delta")
+            print(f"Attempt to subtract delta from an edge with insufficient shipment: {from_node} to {to_node}")
+            return False
+
+    return True
 
 
 def calculate_delta(tab_matrix, ordered_cycle):
@@ -389,10 +408,10 @@ def calculate_delta(tab_matrix, ordered_cycle):
             if shipment > 0:  # Consider only positive shipments for reduction
                 delta = min(delta, shipment)
 
-    if delta == float('inf'):
+    if delta == float('inf') or delta <= 0:
         # If delta is still inf, it means no eligible edge was found or all shipments were zero
         print("No positive shipment found for reduction or incorrect cycle path.")
-        return 0  # Returning 0 or another suitable fallback value
+        return None # Returning 0 or another suitable fallback value
 
     return delta
 
