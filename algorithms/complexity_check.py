@@ -22,7 +22,9 @@ def complexity_menu(choice=-1):
             2: "Balas-Hammer",
             3: "Stepping Stone - North West",
             4: "Stepping Stone - Balas-Hammer",
-            5: "Retour au menu principal"
+            5: "Stepping Stone - North West (sans calcul de North West dans la complexité)",
+            6: "Stepping Stone - Balas-Hammer (avec calcul de Ballas-Hammer dans la complexité)",
+            7: "Retour au menu principal"
         }
         n_dict = {
             1: 10,
@@ -38,11 +40,13 @@ def complexity_menu(choice=-1):
               "\n2.\tBalas-Hammer"
               "\n3.\tStepping Stone - North West"
               "\n4.\tStepping Stone - Balas-Hammer"
-              "\n5.\tRetour au menu principal"
+              "\n5.\tStepping Stone - North West (sans calcul de North West dans la complexité)"
+              "\n6.\tStepping Stone - Balas-Hammer (avec calcul de Ballas-Hammer dans la complexité)"
+              "\n7.\tRetour au menu principal"
               "\n---------------------------------------------------------------")
         choice = int(input(colored("Entrez votre choix : ", "magenta")))
         if choice in choice_dict.keys():
-            if choice == 5:
+            if choice == 7:
                 print(colored("Retour au menu principal...", "yellow"))
                 return
             else:
@@ -70,9 +74,17 @@ def complexity_menu(choice=-1):
                                 case 2:
                                     balashammer(tab_matrix, True)
                                 case 3:
-                                    pass
+                                    steppingstone(northwest(tab_matrix), True)
                                 case 4:
-                                    pass
+                                    steppingstone(balashammer(tab_matrix, True), True)
+                                case 5:
+                                    tab_matrix = northwest(tab_matrix)
+                                    start_time = time()
+                                    steppingstone(tab_matrix, True)
+                                case 6:
+                                    tab_matrix = balashammer(tab_matrix, True)
+                                    start_time = time()
+                                    steppingstone(tab_matrix, True)
                             end_time = time()
                             # print(colored("Temps d'exécution : " + str(end_time - start_time) + "s", "green"))
 

@@ -23,14 +23,14 @@ def balashammer(tab_matrix, complexity_calculation=False):
     confirm = None
     k = 1
     while sum(list_provisions) != 0 and sum(list_orders) != 0:
-        if not complexity_calculation:
+        """if not complexity_calculation:
             while confirm not in ['y', 'n']:
                 confirm = input(colored("Souhaitez-vous afficher les itérations ? (y/n)... ", "magenta"))
                 if confirm not in ['y', 'n']:
                     print(colored("Le choix n'a pas été reconnue.", "red"))
         else:
             confirm = 'n'
-
+        """
         if confirm == 'y' and not complexity_calculation:
             print(colored("\n* Itération n°" + str(k), attrs=["bold", "underline"]))
         k += 1
