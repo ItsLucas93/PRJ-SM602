@@ -10,7 +10,7 @@ from termcolor import colored
 from algorithms.complexity_check import complexity_menu
 from algorithms.northwest import northwest
 from algorithms.balashammer import balashammer
-from algorithms.test import *
+from algorithms.steppingstone import *
 from algorithms.totalcost import totalcost
 from display_tab import display_tab_matrix
 from file_manager import files_list, read_file
