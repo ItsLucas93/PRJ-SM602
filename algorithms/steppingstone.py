@@ -12,7 +12,6 @@ from display_tab import display_tab_matrix
 
 def steppingstone(tab_matrix):
     try:
-        print(tab_matrix)
         # Initialisation des variables
         num_provisions = len(tab_matrix[1])
         num_orders = len(tab_matrix[2])
@@ -27,15 +26,20 @@ def steppingstone(tab_matrix):
                       range(0, num_provisions)]
 
         graph = extract_graph(tab_matrix, num_provisions, num_orders)
+        fictive_edge = []
         # Affichage de la proposition de transport initiale
-        print(totalcost([tab_matrix, list_provisions, list_orders]))
 
         while True:
             graph = extract_graph(tab_matrix, num_provisions, num_orders)
+            print(colored(graph, "yellow"))
             components = find_connected_components(graph)
+            print(components)
             if len(components) > 1:
                 print(colored("The graph is not connected. Connecting the graph...", "red"))
-                graph = connect_graph_components(graph, components, tab_matrix, source_map, destination_map)
+                graph, fictive_edge = connect_graph_components(graph, components, tab_matrix, source_map,
+                                                               destination_map)
+                print(colored("Graph connected successfully.", "green"))
+                print(colored(fictive_edge, "yellow"))
             else:
                 print(colored("The graph is connected.", "green"))
 
@@ -49,7 +53,6 @@ def steppingstone(tab_matrix):
             else:
                 print("No cycle found.")
 
-            print(graph)
             # Calculate potentials
             potentials_dict = calculate_potentials(tab_matrix, num_provisions, num_orders, graph)
             print("Potentials:", potentials_dict)
@@ -124,9 +127,9 @@ def calculate_potentials(tab_matrix, num_provisions, num_orders, graph={}):
                     if tab_matrix[i][j][0] > 0 or (f'P{i + 1}' in graph and f'C{j + 1}' in graph[f'P{i + 1}']):
                         cost = tab_matrix[i][j][1]
                         if 'C' + str(j + 1) not in potentials:
-                            print(potentials)
+                            """print(potentials)
                             print(f"E(P{i + 1}) - E(C{j + 1}) = {cost}")
-                            print(colored(f"E(C{j + 1}) = E(P{i + 1}) - {cost}", attrs=["bold"]))
+                            print(colored(f"E(C{j + 1}) = E(P{i + 1}) - {cost}", attrs=["bold"]))"""
                             potentials['C' + str(j + 1)] = potentials['P' + str(i + 1)] - cost
                             changes = True
                         elif potentials['C' + str(j + 1)] != potentials['P' + str(i + 1)] - cost:
@@ -138,9 +141,9 @@ def calculate_potentials(tab_matrix, num_provisions, num_orders, graph={}):
                     if tab_matrix[i][j][0] > 0 or (f'C{j + 1}' in graph and f'P{i + 1}' in graph[f'C{j + 1}']):
                         cost = tab_matrix[i][j][1]
                         if 'P' + str(i + 1) not in potentials:
-                            print(potentials)
+                            """print(potentials)
                             print(f"E(P{i + 1}) - E(C{j + 1}) = {cost}")
-                            print(colored(f"E(P{i + 1}) = E(C{j + 1}) + {cost}", attrs=["bold"]))
+                            print(colored(f"E(P{i + 1}) = E(C{j + 1}) + {cost}", attrs=["bold"]))"""
                             potentials['P' + str(i + 1)] = potentials['C' + str(j + 1)] + cost
                             changes = True
                         # Check for inconsistencies: P(i) - C(j) = cost
@@ -318,7 +321,6 @@ def improve_transport_proposal(tab_matrix, graph, best_edge, source_map, destina
     graph[start_vertex].append(end_vertex)
     graph[end_vertex].append(start_vertex)
 
-    print(graph)
     # Detect cycle including the temporary edge
     cycle = detect_cycle_including_edge(graph, start_vertex, end_vertex)
 
@@ -343,7 +345,7 @@ def improve_transport_proposal(tab_matrix, graph, best_edge, source_map, destina
         return False
 
     # Apply delta adjustments along the reordered cycle
-    if not apply_cycle_delta(tab_matrix, ordered_cycle, delta, source_map, destination_map):
+    if not apply_cycle_delta(tab_matrix, ordered_cycle, delta, source_map, destination_map, graph):
         print("Error applying cycle adjustments.")
         return False
 
@@ -354,7 +356,7 @@ def improve_transport_proposal(tab_matrix, graph, best_edge, source_map, destina
     return True
 
 
-def apply_cycle_delta(tab_matrix, ordered_cycle, delta, source_map, destination_map):
+def apply_cycle_delta(tab_matrix, ordered_cycle, delta, source_map, destination_map, graph):
     add = True  # Start with addition for the first element, adjust this logic if needed based on cycle direction
 
     for i in range(len(ordered_cycle) - 1):
@@ -381,6 +383,11 @@ def apply_cycle_delta(tab_matrix, ordered_cycle, delta, source_map, destination_
             tab_matrix[from_index][to_index][0] += delta
         else:
             tab_matrix[from_index][to_index][0] -= delta
+            # Remove the edge if the shipment is zero
+            if tab_matrix[from_index][to_index][0] == 0:
+                if graph[from_node].count(to_node) > 0:
+                    graph[from_node].remove(to_node) if to_node in graph[from_node] else None
+                    graph[to_node].remove(from_node) if from_node in graph[to_node] else None
 
         add = not add  # Alternate between addition and subtraction
 
@@ -512,47 +519,56 @@ def find_connected_components(graph):
     return components
 
 
-def connect_graph_components(graph, components, tab_matrix, source_map, destination_map):
-    """
-    Connect disjoint components of the graph with a focus on cost-effectiveness and component significance.
+def connect_graph_components(graph, components, tab_matrix, source_map, destination_map, fictive_edge=[]):
+    if len(components[0]) - 1 == len(graph) - len(components):  # checks if n-1 edges are present
+        print("The graph is already optimally connected as a tree.")
+        return graph
 
-    :param graph: A dictionary where keys are node identifiers and values are lists of connected nodes.
-    :param components: A list of lists, where each sublist is a set of nodes representing a connected component.
-    :param tab_matrix: A matrix representing transport costs and provisions/orders between nodes.
-    :param source_map: Dictionary mapping source labels to their indices.
-    :param destination_map: Dictionary mapping destination labels to their indices.
-    :return: Updated graph with added edges to connect components.
-    """
-    for i in range(len(components) - 1):
+    for edge in fictive_edge:
+        graph.setdefault(edge[0], []).append(edge[1]) if not edge[1] in graph[edge[0]] else None
+        graph.setdefault(edge[1], []).append(edge[0]) if not edge[0] in graph[edge[1]] else None
+    components = find_connected_components(graph)
+
+    if len(components[0]) - 1 == len(graph) - len(components):  # checks if n-1 edges are present
+        print("The graph is already optimally connected as a tree.")
+        return graph
+
+    base_component = components[0]  # the first component as the base
+
+    # Iterate over each other component
+    for other_component in components[1:]:
+        print(other_component, components)
         min_cost = float('inf')
         best_connection = None
 
-        # Evaluate all possible connections between current and next component
-        for node_p in components[i]:
-            if node_p.startswith('P'):  # Assuming 'P' denotes a source
-                for node_c in components[i + 1]:
-                    if node_c.startswith('C'):  # Assuming 'C' denotes a destination
-                        # Calculate potential edge cost
-                        p_index = source_map[node_p]
-                        c_index = destination_map[node_c]
-                        edge_cost = tab_matrix[p_index][c_index][1]  # Assuming cost is stored at index 1
+        # Try to connect base component to each other component
+        for base_node in base_component:
+            for other_node in other_component:
+                p_index = source_map.get(base_node, -1)
+                c_index = destination_map.get(other_node, -1)
+                if p_index == -1 or c_index == -1:
+                    continue  # Skip if no valid mapping
+                edge_cost = tab_matrix[p_index][c_index][1]
+                print(f"Checking connection from {base_node} to {other_node}, cost: {edge_cost}")
 
-                        # Check if this edge offers a lower cost connection
-                        if edge_cost < min_cost:
-                            min_cost = edge_cost
-                            best_connection = (node_p, node_c)
+                # Select the edge with the minimum cost
+                if edge_cost < min_cost:
+                    min_cost = edge_cost
+                    best_connection = (base_node, other_node)
 
-        # Connect the best nodes found with the minimal cost
+        # Connect the best nodes found
         if best_connection:
             p, c = best_connection
             graph.setdefault(p, []).append(c)
             graph.setdefault(c, []).append(p)
             print(f"Connecting {p} to {c} with cost {min_cost}")
+            print(find_connected_components(graph))
 
-    return graph
+            # Stock the fictive edge
+            if [p, c] not in fictive_edge:
+                fictive_edge.append([p, c])
 
-
-# Additional function calls and setup for source_map, destination_map, and tab_matrix might be needed.
+    return graph, fictive_edge
 
 
 def maximize_transportation(tab_matrix, graph, cycle, source_map, destination_map):
