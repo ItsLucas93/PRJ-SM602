@@ -33,44 +33,36 @@ def steppingstone(tab_matrix, complexity_bool=False):
 
         while True:
             graph = extract_graph(tab_matrix, num_provisions, num_orders)
-            print(colored(graph, "yellow")) if not complexity else None if not complexity else None
             components = find_connected_components(graph)
-            print(components) if not complexity else None
             if len(components) > 1:
-                print(colored("The graph is not connected. Connecting the graph...",
+                print(colored("Le graphe n'est pas connexe, connexion des composants...",
                               "red")) if not complexity else None if not complexity else None
                 graph, fictive_edge = connect_graph_components(graph, components, tab_matrix, source_map,
                                                                destination_map)
-                print(colored("Graph connected successfully.",
+                print(colored("Connexion des composants avec succès.",
                               "green")) if not complexity else None if not complexity else None
-                print(colored(fictive_edge, "yellow")) if not complexity else None if not complexity else None
-                print(colored(graph, "yellow")) if not complexity else None if not complexity else None
             else:
                 print(
-                    colored("The graph is connected.", "green")) if not complexity else None if not complexity else None
+                    colored("Le graph est connecté", "green")) if not complexity else None if not complexity else None
 
             # Find a cycle in the graph
             cycle = bfs_detect_cycle(graph, 'P1')
             if cycle:
-                print("Cycle found:", cycle) if not complexity else None if not complexity else None
+                print(colored("Présence de cycle: " + str(cycle), "red")) if not complexity else None if not complexity else None
                 # Transportation maximization if a cycle has been detected. The conditions for each box are displayed. Then we display the deleted edge (possibly several) at the end of maximization.
                 maximize_transportation(tab_matrix, graph, cycle, source_map, destination_map)
-                print("HIT maximize_transportation") if not complexity else None if not complexity else None
             else:
-                print("No cycle found.") if not complexity else None if not complexity else None
+                print(colored("Pas de cycle trouvé.", "green")) if not complexity else None if not complexity else None
 
             # Calculate potentials
             potentials_dict = calculate_potentials(tab_matrix, num_provisions, num_orders, graph)
-            print("Potentials:", potentials_dict) if not complexity else None if not complexity else None
 
             # Calculate the matrix of potential costs
             matrix_potential = matrix_potential_cost(potentials_dict, num_provisions, num_orders)
-            print("Potential cost matrix: ", matrix_potential) if not complexity else None if not complexity else None
             display_tab_matrix(matrix_potential, "Potential", "potential") if not complexity else None
 
             # Calculate marginal costs
             matrix_marginal = matrix_marginal_cost(tab_matrix, matrix_potential, num_provisions, num_orders)
-            print("Marginal cost matrix: ", matrix_marginal) if not complexity else None if not complexity else None
             display_tab_matrix(matrix_marginal, "Marginal", "marginal") if not complexity else None
 
             # Proposition optimale ?
@@ -78,18 +70,16 @@ def steppingstone(tab_matrix, complexity_bool=False):
                 improved = False
                 best_edge = find_best_improving_edge(matrix_marginal)
                 print(
-                    f"Trying edge: P{best_edge[0] + 1}C{best_edge[1] + 1} with marginal cost {matrix_marginal[best_edge[0]][best_edge[1]]}") if not complexity else None
-                if improve_transport_proposal(tab_matrix, graph, best_edge, source_map, destination_map):
+                    f"Essai sur l'arrête : P{best_edge[0] + 1}C{best_edge[1] + 1} avec un coût marginal {matrix_marginal[best_edge[0]][best_edge[1]]}") if not complexity else None
+                if improve_transport_proposal(tab_matrix, graph, best_edge, source_map, destination_map, list_provisions, list_orders):
                     improved = True
                 if not improved:
-                    print(colored("No further improvements possible with any negative margins.",
-                                  "red")) if not complexity else None if not complexity else None
+                    print(colored("Aucune amélioration possible.", "red")) if not complexity else None
                     break
             else:
-                print("Optimal solution found.") if not complexity else None if not complexity else None
+                print("Solution optimale trouvée.") if not complexity else None if not complexity else None
                 break
             display_tab_matrix([tab_matrix, list_provisions, list_orders], "Step") if not complexity else None
-            input("Press Enter to continue...") if not complexity else None
 
         return [tab_matrix, list_provisions, list_orders]
     except Exception as e:
@@ -151,8 +141,10 @@ def calculate_potentials(tab_matrix, num_provisions, num_orders, graph={}):
                                 f"Inconsistency found at P{i + 1}") if not complexity else None if not complexity else None
 
     # Print all calculated potentials if not complexity else None
+    print("\n-------") if not complexity else None if not complexity else None
     for vertex, potential in potentials.items():
-        print(f"Potential for E({vertex}): {potential}") if not complexity else None if not complexity else None
+        print(f"| E({vertex}) = {potential}") if not complexity else None if not complexity else None
+    print("-------") if not complexity else None if not complexity else None
 
     return potentials
 
@@ -312,7 +304,7 @@ def detect_cycle_including_edge(graph, start_vertex, end_vertex):
     return None  # No cycle found that includes the given edge
 
 
-def improve_transport_proposal(tab_matrix, graph, best_edge, source_map, destination_map):
+def improve_transport_proposal(tab_matrix, graph, best_edge, source_map, destination_map, list_provisions, list_orders):
     # Deep copy of graph to avoid modifying the original
     graph = {vertex: neighbors[:] for vertex, neighbors in graph.items()}
 
@@ -325,13 +317,18 @@ def improve_transport_proposal(tab_matrix, graph, best_edge, source_map, destina
     cycle = detect_cycle_including_edge(graph, start_vertex, end_vertex)
 
     if not cycle:
-        print("No cycle found including the edge, check the edge detection logic.") if not complexity else None
+        print("No cycle found including the edge") if not complexity else None
         return
 
     # Reorder the cycle to start with a consumer and ensure correct alternation
     ordered_cycle = reorder_cycle(graph, cycle, best_edge)
 
-    print("Ordered cycle:", ordered_cycle) if not complexity else None
+    if not complexity and ordered_cycle:
+        print(colored("* Cycle :", attrs=["bold"]), end=' ')
+        print(f"{ordered_cycle[0]}", end=' ') if not complexity else None
+        for i in range(1, len(ordered_cycle) - 1):
+            print(f"→ {ordered_cycle[i]}", end=' ') if not complexity else None
+        print(f"→ {ordered_cycle[-1]}") if not complexity else None
 
     # Remove the temporary edge
     graph[start_vertex].remove(end_vertex)
@@ -339,20 +336,21 @@ def improve_transport_proposal(tab_matrix, graph, best_edge, source_map, destina
 
     # Calculate the maximum delta that can be applied to this cycle
     delta = calculate_delta(tab_matrix, ordered_cycle)
-    print(f"Maximum delta for the cycle: {delta}") if not complexity else None
+    print(f"* δₘₐₓ = {delta}") if not complexity else None
     if delta is None or delta <= 0:
-        print("No positive delta available to optimize the transport.") if not complexity else None
+        print(f"Pas de valeur de delta trouvée pour le transport (δ = {delta})") if not complexity else None
         return False
 
+    # Display with delta
+    # Convert the ordered cycle to indices for tab_matrix
+    indices = [[get_indices(ordered_cycle[i], ordered_cycle[i + 1], source_map, destination_map) for i in range(len(ordered_cycle) - 1)]]
+    indices.append(delta)
+    display_tab_matrix([tab_matrix, list_provisions, list_orders], "δ", "delta", indices) if not complexity else None
     # Apply delta adjustments along the reordered cycle
     if not apply_cycle_delta(tab_matrix, ordered_cycle, delta, source_map, destination_map, graph):
-        print("Error applying cycle adjustments.") if not complexity else None
+        print("Erreur lors de l'application du cycle.") if not complexity else None
         return False
 
-    # Print the updated matrix to check improvements if not complexity else None
-    print("Updated transport matrix with improved cycle:") if not complexity else None
-    for row in tab_matrix:
-        print(row) if not complexity else None
     return True
 
 
@@ -370,15 +368,10 @@ def apply_cycle_delta(tab_matrix, ordered_cycle, delta, source_map, destination_
             from_index = source_map[to_node] if 'P' in to_node else destination_map[to_node]
             to_index = destination_map[from_node] if 'C' in from_node else source_map[from_node]
 
-        print(
-            f"Adjusting shipment from {from_node} to {to_node} by delta {delta}, add: {add}") if not complexity else None
-        print(f"Current shipment: {tab_matrix[from_index][to_index][0]}", from_index,
-              to_index) if not complexity else None
-
         # Check to ensure we are not subtracting where the shipment is zero or less than delta
         if tab_matrix[from_index][to_index][0] - delta < 0 and not add:
             print(
-                f"Attempt to subtract delta from an edge with insufficient shipment: {from_node} to {to_node}") if not complexity else None
+                f"Tentative de soustraction du δ d'une arrête dont l'envoi est insuffisant : {from_node} → {to_node}") if not complexity else None
             return False
 
         # Apply delta
@@ -397,7 +390,7 @@ def apply_cycle_delta(tab_matrix, ordered_cycle, delta, source_map, destination_
         # Error check moved to a safer place before modification
         if tab_matrix[from_index][to_index][0] < 0:
             print(
-                f"Attempt to subtract delta from an edge with insufficient shipment: {from_node} to {to_node}") if not complexity else None
+                f"Tentative de soustraction du δ d'une arrête dont l'envoi est insuffisant : {from_node} → {to_node}") if not complexity else None
             return False
 
     return True
@@ -436,10 +429,8 @@ def needs_reduction(index):
 
 
 def reorder_cycle(graph, cycle, best_edge):
-    print("Reordering cycle : ", cycle) if not complexity else None
     # Find the first node with double occurrence or use the first node
     cycle_count = {node: cycle.count(node) for node in cycle}
-    print("Cycle count : ", cycle_count) if not complexity else None
     start_node = None
     for node, count in cycle_count.items():
         if count > 1:
@@ -462,7 +453,6 @@ def reorder_cycle(graph, cycle, best_edge):
 
         # Get the next node in the cycle that is connected and not visited
         for next_node in graph[current_node]:
-            print(f"Checking edge from {current_node} to {next_node}") if not complexity else None
             if not best_edge_visited and current_node == f'P{best_edge[0] + 1}' and next_node == f'C{best_edge[1] + 1}':
                 best_edge_visited = True
                 current_node = next_node
@@ -485,16 +475,6 @@ def reorder_cycle(graph, cycle, best_edge):
             break
 
     return reordered_cycle
-
-
-def test_connectivity(graph):
-    components = find_connected_components(graph)
-    if len(components) == 1:
-        print("The graph is connected.") if not complexity else None
-    else:
-        print("The graph is not connected. Here are the connected components:") if not complexity else None
-        for i, component in enumerate(components, 1):
-            print(f"Component {i}: {component}") if not complexity else None
 
 
 def find_connected_components(graph):
@@ -526,7 +506,7 @@ def find_connected_components(graph):
 def connect_graph_components(graph, components, tab_matrix, source_map, destination_map, fictive_edges=[]):
     # Initial check if the graph is already a tree
     if len(components[0]) - 1 == len(graph) - len(components):
-        print("The graph is already optimally connected as a tree.") if not complexity else None
+        print("Le graphe est déjà connecté de manière optimale comme un arbre.") if not complexity else None
         return graph, fictive_edges
 
     for edge in fictive_edges:
@@ -536,7 +516,7 @@ def connect_graph_components(graph, components, tab_matrix, source_map, destinat
     # Check again if adding fictive edges has connected the graph as a tree
     components = find_connected_components(graph)
     if len(components[0]) - 1 == len(graph) - len(components):
-        print("The graph is already optimally connected as a tree.") if not complexity else None
+        print("Le graphe est déjà connecté de manière optimale comme un arbre.") if not complexity else None
         return graph, fictive_edges
 
     base_component = components[0]  # Use the first component as the base
@@ -560,8 +540,6 @@ def connect_graph_components(graph, components, tab_matrix, source_map, destinat
                     continue  # Skip if the pairing is not between P and C
 
                 edge_cost = tab_matrix[p_index][c_index][1]
-                print(
-                    f"Checking connection from {base_node} to {other_node}, cost: {edge_cost}") if not complexity else None
 
                 # Check for the minimum cost connection
                 if edge_cost < min_cost:
@@ -573,7 +551,7 @@ def connect_graph_components(graph, components, tab_matrix, source_map, destinat
             p, c = best_connection
             graph.setdefault(p, []).append(c)
             graph.setdefault(c, []).append(p)
-            print(f"Connecting {p} to {c} with cost {min_cost}") if not complexity else None
+            print(f"Connexion de {p} → {c} avec coût {min_cost}") if not complexity else None
             fictive_edges.append([p, c])
 
     return graph, fictive_edges
@@ -605,14 +583,14 @@ def maximize_transportation(tab_matrix, graph, cycle, source_map, destination_ma
         to_node = cycle[i + 1]
         from_index, to_index = get_indices(from_node, to_node, source_map, destination_map)
         shipment = tab_matrix[from_index][to_index][0]
-        print(f"{from_node} -> {to_node}: {shipment}") if not complexity else None
+        print(f"{from_node} → {to_node}: {shipment}") if not complexity else None
         if shipment == 0:
             deleted_edges.append((from_node, to_node))
 
     if deleted_edges:
         print("Deleted edges after maximization:") if not complexity else None
         for edge in deleted_edges:
-            print(f"{edge[0]} -> {edge[1]}") if not complexity else None
+            print(f"{edge[0]} → {edge[1]}") if not complexity else None
     else:
         print("No edges deleted.") if not complexity else None
 

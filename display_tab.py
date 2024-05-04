@@ -43,6 +43,25 @@ def display_tab_matrix(tab_matrix, tab_num, option="", optionvalue=[]):
                     body[i].append(tab_matrix[i][j])
 
             print(tabulate(body, headers=header, tablefmt="mixed_grid", numalign="center", stralign="center"))
+        elif option == "delta":
+            SUB = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
+            header = [str(tab_num)] + [colored("C" + str(i + 1).translate(SUB), "cyan", attrs=["bold"]) for i in range(len(tab_matrix[0]))] + [colored("Provisions Pᵢ", "green", attrs=["bold"])]
+
+            body = []
+            for i in range(len(tab_matrix[0])):
+                body.append([colored("P" + str(i + 1).translate(SUB), "cyan", attrs=["bold"])])
+                for j in range(len(tab_matrix[0][i])):
+                    if (i, j) in optionvalue[0] and optionvalue[0].index((i, j)) % 2 == 0:
+                        body[i].append(str(tab_matrix[0][i][j][0]) + " " + colored(str(tab_matrix[0][i][j][1]).translate(SUB), "green", attrs=["bold"]) + colored(" + " + str(optionvalue[1]), "light_red"))
+                    elif (j, i) in optionvalue[0] and optionvalue[0].index((j, i)) % 2 == 1:
+                        body[i].append(str(tab_matrix[0][i][j][0]) + " " + colored(str(tab_matrix[0][i][j][1]).translate(SUB), "green", attrs=["bold"]) +colored( " - " + str(optionvalue[1]), "light_red"))
+                    else:
+                        body[i].append(str(tab_matrix[0][i][j][0]) + " " + colored(str(tab_matrix[0][i][j][1]).translate(SUB), "green"))
+                body[i].append(tab_matrix[1][i])
+
+            body.append([colored("Commandes Cᵢ", "green", attrs=["bold"])] + [str(tab_matrix[2][i]) for i in range(len(tab_matrix[2]))] + [""])
+
+            print(tabulate(body, headers=header, tablefmt="mixed_grid", numalign="center", stralign="center"))
         elif option == "balas_hammer":
             SUB = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
             header = [str(tab_num)] + [colored("C" + str(i + 1).translate(SUB), "cyan", attrs=["bold"]) for i in range(len(tab_matrix[0][0]))] + [colored("Provisions Pᵢ", "green", attrs=["bold"])] + [colored("Pénalités", "red", attrs=["bold"])]
