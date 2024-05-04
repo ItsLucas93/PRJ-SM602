@@ -40,6 +40,7 @@ def steppingstone(tab_matrix):
                                                                destination_map)
                 print(colored("Graph connected successfully.", "green"))
                 print(colored(fictive_edge, "yellow"))
+                print(colored(graph, "yellow"))
             else:
                 print(colored("The graph is connected.", "green"))
 
@@ -70,22 +71,13 @@ def steppingstone(tab_matrix):
             # Proposition optimale ?
             if not all(marginal >= 0 for row in matrix_marginal for marginal in row):
                 improved = False
-                for best_edge in sorted(find_all_negative_margins(matrix_marginal),
-                                        key=lambda x: matrix_marginal[x[0]][x[1]]):
-                    print(
-                        f"Trying edge: P{best_edge[0] + 1}C{best_edge[1] + 1} with marginal cost {matrix_marginal[best_edge[0]][best_edge[1]]}")
-                    if improve_transport_proposal(tab_matrix, graph, best_edge, source_map, destination_map):
-                        improved = True
-                        break
-                    """graph = extract_graph(tab_matrix, num_provisions, num_orders)
-                    cycle = bfs_detect_cycle(graph, 'P1')
-                    delta = calculate_delta(tab_matrix, cycle)
-                    if delta:
-                        apply_cycle_delta(tab_matrix, cycle, delta, source_map, destination_map)
-                        improved = True
-                        break"""
+                best_edge = find_best_improving_edge(matrix_marginal)
+                print(
+                    f"Trying edge: P{best_edge[0] + 1}C{best_edge[1] + 1} with marginal cost {matrix_marginal[best_edge[0]][best_edge[1]]}")
+                if improve_transport_proposal(tab_matrix, graph, best_edge, source_map, destination_map):
+                    improved = True
                 if not improved:
-                    print("No further improvements possible with any negative margins.")
+                    print(colored("No further improvements possible with any negative margins.", "red"))
                     break
             else:
                 print("Optimal solution found.")
@@ -94,7 +86,7 @@ def steppingstone(tab_matrix):
             input("Press Enter to continue...")
 
         return [tab_matrix, list_provisions, list_orders]
-    except ValueError as e:
+    except Exception as e:
         print(colored("Une erreur est survenue : " + str(e), "red"))
         return None
 
@@ -519,39 +511,46 @@ def find_connected_components(graph):
     return components
 
 
-def connect_graph_components(graph, components, tab_matrix, source_map, destination_map, fictive_edge=[]):
-    if len(components[0]) - 1 == len(graph) - len(components):  # checks if n-1 edges are present
+def connect_graph_components(graph, components, tab_matrix, source_map, destination_map, fictive_edges=[]):
+    # Initial check if the graph is already a tree
+    if len(components[0]) - 1 == len(graph) - len(components):
         print("The graph is already optimally connected as a tree.")
-        return graph
+        return graph, fictive_edges
 
-    for edge in fictive_edge:
-        graph.setdefault(edge[0], []).append(edge[1]) if not edge[1] in graph[edge[0]] else None
-        graph.setdefault(edge[1], []).append(edge[0]) if not edge[0] in graph[edge[1]] else None
+    for edge in fictive_edges:
+        graph.setdefault(edge[0], []).append(edge[1]) if edge[1] not in graph[edge[0]] else None
+        graph.setdefault(edge[1], []).append(edge[0]) if edge[0] not in graph[edge[1]] else None
+
+    # Check again if adding fictive edges has connected the graph as a tree
     components = find_connected_components(graph)
-
-    if len(components[0]) - 1 == len(graph) - len(components):  # checks if n-1 edges are present
+    if len(components[0]) - 1 == len(graph) - len(components):
         print("The graph is already optimally connected as a tree.")
-        return graph
+        return graph, fictive_edges
 
-    base_component = components[0]  # the first component as the base
+    base_component = components[0]  # Use the first component as the base
 
-    # Iterate over each other component
+    # Connect each other component to the base
     for other_component in components[1:]:
-        print(other_component, components)
         min_cost = float('inf')
         best_connection = None
 
-        # Try to connect base component to each other component
+        # Check connections both from P to C and C to P
         for base_node in base_component:
             for other_node in other_component:
-                p_index = source_map.get(base_node, -1)
-                c_index = destination_map.get(other_node, -1)
-                if p_index == -1 or c_index == -1:
-                    continue  # Skip if no valid mapping
+                # Determine if base_node is P and other_node is C or vice versa
+                if base_node.startswith('P') and other_node.startswith('C'):
+                    p_index = source_map[base_node]
+                    c_index = destination_map[other_node]
+                elif base_node.startswith('C') and other_node.startswith('P'):
+                    p_index = source_map[other_node]
+                    c_index = destination_map[base_node]
+                else:
+                    continue  # Skip if the pairing is not between P and C
+
                 edge_cost = tab_matrix[p_index][c_index][1]
                 print(f"Checking connection from {base_node} to {other_node}, cost: {edge_cost}")
 
-                # Select the edge with the minimum cost
+                # Check for the minimum cost connection
                 if edge_cost < min_cost:
                     min_cost = edge_cost
                     best_connection = (base_node, other_node)
@@ -562,13 +561,10 @@ def connect_graph_components(graph, components, tab_matrix, source_map, destinat
             graph.setdefault(p, []).append(c)
             graph.setdefault(c, []).append(p)
             print(f"Connecting {p} to {c} with cost {min_cost}")
-            print(find_connected_components(graph))
+            fictive_edges.append([p, c])
 
-            # Stock the fictive edge
-            if [p, c] not in fictive_edge:
-                fictive_edge.append([p, c])
+    return graph, fictive_edges
 
-    return graph, fictive_edge
 
 
 def maximize_transportation(tab_matrix, graph, cycle, source_map, destination_map):
