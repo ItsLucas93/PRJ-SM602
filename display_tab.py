@@ -27,7 +27,6 @@ def display_tab_matrix(tab_matrix, tab_num, option="", optionvalue=[]):
         if option == "potential":
             P = len(tab_matrix)
             C = len(tab_matrix[0])
-            print(P, C, tab_matrix)
             header = [str(tab_num)] + [colored("C" + str(i + 1), "cyan", attrs=["bold"]) for i in range(C)]
             body = []
 
