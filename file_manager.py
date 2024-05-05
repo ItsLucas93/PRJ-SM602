@@ -58,15 +58,34 @@ def files_list(path=folder_path):
 
 
 def read_file(file, path=folder_path):
+    """
+    * Fonction: read_file
+    * --------------------
+    * Appelle la fonction tab_to_matrix pour lire un fichier de test et renvoyer le tableau de contraintes.
+    * Renvoie un message d'erreur si le fichier n'est pas trouvé.
+    * :param file: Nom du fichier à lire.
+    * :param path: Chemin du dossier contenant les fichiers de test.
+    * :return: Tableau de contraintes | En cas d'échec : Message d'erreur, None
+    """
     tab_matrix = tab_to_matrix(file, path)
     return tab_matrix
 
 
 def tab_to_matrix(file, path=folder_path):
+    """
+    * Fonction: tab_to_matrix
+    * --------------------
+    * Convertit un fichier de test en tableau de contraintes.
+    * :param file: Nom du fichier à lire.
+    * :param path: Chemin du dossier contenant les fichiers de test.
+    * :return: Tableau de contraintes | En cas d'échec : Message d'erreur, None
+    """
+    # Initialisation des variables
     matrix_cost = []
     list_provisions = []
     list_orders = []
 
+    # Lecture du fichier
     try:
         with open(path + file, 'r') as file:
             n, m = map(int, file.readline().strip().split())
