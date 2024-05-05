@@ -164,6 +164,7 @@ def menu_choix_algorithme(choix_tableau, choix):
                             "white"))
                         input(colored("Appuyez sur une touche pour continuer...", "magenta"))
 
+                        print(colored("* Méthode de marche-pieds", attrs=["bold", "underline"]))
                         stepping_matrix = steppingstone(northwest_matrix)
                         matrixtotalcost_stepping = totalcost(stepping_matrix)
                         display_tab_matrix(stepping_matrix, choix_tableau)
@@ -180,6 +181,7 @@ def menu_choix_algorithme(choix_tableau, choix):
                             "white"))
                         input(colored("Appuyez sur une touche pour continuer...", "magenta"))
 
+                        print(colored("* Méthode de marche-pieds", attrs=["bold", "underline"]))
                         stepping_matrix = steppingstone(balas_hammer_matrix)
                         matrixtotalcost_stepping = totalcost(stepping_matrix)
                         display_tab_matrix(stepping_matrix, choix_tableau)
