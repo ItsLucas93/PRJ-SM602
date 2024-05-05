@@ -7,6 +7,13 @@ Version de Python: 3.12
 
 
 def totalcost(tab_matrix):
+    """
+    * Fonction : totalcost
+    * --------------------
+    * Cette fonction permet de calculer le coût total de la proposition de transport
+    * :param tab_matrix: Tableau contenant les coûts unitaires et les quantités à transporter
+    * :return: Le coût total de la proposition de transport
+    """
     matrixtotalcost = 0
     for i in range(len(tab_matrix[1])):
         for j in range(len(tab_matrix[2])):
