@@ -5,8 +5,6 @@ Description: Ce fichier est le fichier qui lit les tableaux de contraintes, il p
 Version de Python: 3.12
 """
 
-from termcolor import colored
-
 from algorithms.complexity_check import complexity_menu
 from algorithms.northwest import northwest
 from algorithms.balashammer import balashammer
@@ -47,7 +45,8 @@ def menu_principal(choix=0):
      * Tant que l’utilisateur décide de tester un tableau de contraintes faire
      * Choix possibles :
      * 1. Lire un tableau de contraintes sur fichier
-     * 2. Quitter le programme
+     * 2. Programme de complexité
+     * 3. Quitter le programme
     """
     # Boucle principale
     while True:
@@ -75,6 +74,16 @@ def menu_principal(choix=0):
 
 
 def menu_choix_tableau(choix=-1):
+    """
+    * Fonction: menu_choix_tableau
+    * -----------------
+    * Fonction permettant d'afficher le menu de choix de tableau de contraintes.
+    * Tant que l’utilisateur décide de tester un tableau de contraintes faire
+    * Choix possibles :
+    * 0. Retour au menu principal
+    * 1 à n: Fichier de tableau de contraintes
+    * :param choix: Choix du tableau de contraintes
+    """
     string_test_files, index_test_files = files_list()
 
     if index_test_files is not None:
@@ -110,8 +119,21 @@ def menu_choix_tableau(choix=-1):
 
 
 def menu_choix_algorithme(choix_tableau, choix):
+    """
+    * Fonction: menu_choix_algorithme
+    * -----------------
+    * Fonction permettant d'afficher le menu de choix d'algorithme.
+    * Tant que l’utilisateur décide de tester un algorithme faire
+    * Choix possibles :
+    * 0. Retour au menu précédent
+    * 1. Algorithme de Nord-Ouest
+    * 2. Algorithme de Ballas-Hammer
+    * Exécute l'algorithme choisi sur le tableau de contraintes, affiche le tableau de contraintes et le coût total de la proposition de transport.
+    * Essai d'optimisation avec la méthode de marche-pieds
+    * :param choix_tableau: Nom du fichier de tableau de contraintes
+    * :param choix: Choix du tableau de contraintes
+    """
     tab_matrix = read_file(choix_tableau)
-    # print(tab_matrix)
 
     if tab_matrix is not None:
         display_tab_matrix(tab_matrix, choix_tableau)
@@ -135,30 +157,34 @@ def menu_choix_algorithme(choix_tableau, choix):
                     case 1:
                         print(colored("* Algorithme de Nord-Ouest", attrs=["bold", "underline"]))
                         northwest_matrix = northwest(tab_matrix)
-                        # print(northwest_matrix)
                         display_tab_matrix(northwest_matrix, choix_tableau)
                         matrixtotalcost = totalcost(northwest_matrix)
-                        print(colored("* Le coût total de la proposition de transport est de " + str(matrixtotalcost) + ".", "white"))
+                        print(colored(
+                            "* Le coût total de la proposition de transport est de " + str(matrixtotalcost) + ".",
+                            "white"))
                         input(colored("Appuyez sur une touche pour continuer...", "magenta"))
 
                         stepping_matrix = steppingstone(northwest_matrix)
                         matrixtotalcost_stepping = totalcost(stepping_matrix)
                         display_tab_matrix(stepping_matrix, choix_tableau)
-                        print(colored("* Le coût total de la proposition de transport est de " + str(matrixtotalcost_stepping) + ".", "white"))
+                        print(colored("* Le coût total de la proposition de transport est de " + str(
+                            matrixtotalcost_stepping) + ".", "white"))
 
                     case 2:
                         print(colored("* Algorithme de Ballas-Hammer", attrs=["bold", "underline"]))
                         balas_hammer_matrix = balashammer(tab_matrix)
-                        # print(balas_hammer_matrix)
                         display_tab_matrix(balas_hammer_matrix, choix_tableau)
                         matrixtotalcost = totalcost(balas_hammer_matrix)
-                        print(colored("* Le coût total de la proposition de transport est de " + str(matrixtotalcost) + ".", "white"))
+                        print(colored(
+                            "* Le coût total de la proposition de transport est de " + str(matrixtotalcost) + ".",
+                            "white"))
                         input(colored("Appuyez sur une touche pour continuer...", "magenta"))
 
                         stepping_matrix = steppingstone(balas_hammer_matrix)
                         matrixtotalcost_stepping = totalcost(stepping_matrix)
                         display_tab_matrix(stepping_matrix, choix_tableau)
-                        print(colored("* Le coût total de la proposition de transport est de " + str(matrixtotalcost_stepping) + ".", "white"))
+                        print(colored("* Le coût total de la proposition de transport est de " + str(
+                            matrixtotalcost_stepping) + ".", "white"))
                     case _:
                         print(colored("Le choix n'a pas été reconnue.", "red"))
                         continue
