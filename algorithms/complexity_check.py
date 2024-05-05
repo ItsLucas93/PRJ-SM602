@@ -16,6 +16,12 @@ from tqdm import tqdm
 folder_path = "./complexity"
 
 def complexity_menu(choice=-1):
+    """
+    * Fonction : complexity_menu
+    * ----------------------
+    * Menu de complexité pour les algorithmes de résolution du problème de transport.
+    * :param choice:
+    """
     while True:
         choice_dict = {
             1: "North west",
@@ -99,6 +105,13 @@ def complexity_menu(choice=-1):
 
 
 def generate_tab(n):
+    """
+    * Fonction : generate_tab
+    * ----------------------
+    * Génère une matrice de transport, une liste de provisions et une liste de commandes.
+    * :param n: Taille de la matrice de transport
+    * :return: [tab_matrix, list_provision, list_order] : Matrice de transport, liste de provisions et liste de commandes
+    """
     tab_matrix = [[[0, randint(1, 100)] for _ in range(n)] for _ in range(n)]
     list_provision = [randint(1, 100) for _ in range(n)]
     list_order = [randint(1, 100) for _ in range(n)]
