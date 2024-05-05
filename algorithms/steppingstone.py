@@ -180,7 +180,7 @@ def calculate_potentials(tab_matrix, num_provisions, num_orders, graph={}):
                                 f"Inconsistency found at P{i + 1}") if not complexity else None if not complexity else None
 
     # Affichage des potentiels calculés
-    print("\n-------") if not complexity else None if not complexity else None
+    print("-------") if not complexity else None if not complexity else None
     for vertex, potential in potentials.items():
         print(f"| E({vertex}) = {potential}") if not complexity else None if not complexity else None
     print("-------") if not complexity else None if not complexity else None
