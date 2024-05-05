@@ -62,6 +62,7 @@ def display_tab_matrix(tab_matrix, tab_num, option="", optionvalue=[]):
             for i in range(len(tab_matrix[0])):
                 body.append([colored("P" + str(i + 1).translate(SUB), "cyan", attrs=["bold"])])
                 for j in range(len(tab_matrix[0][i])):
+                    # Si la case est dans la liste des deltas, mise en valeur de l'opération delta
                     if (i, j) in optionvalue[0] and optionvalue[0].index((i, j)) % 2 == 0:
                         body[i].append(
                             str(tab_matrix[0][i][j][0]) + " " + colored(str(tab_matrix[0][i][j][1]).translate(SUB),

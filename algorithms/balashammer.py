@@ -11,6 +11,14 @@ from display_tab import display_tab_matrix
 
 
 def balashammer(tab_matrix, complexity_calculation=False):
+    """
+    * Fonction : balashammer
+    * ----------------------
+    * Cette fonction permet de résoudre un problème de transport en utilisant l'algorithme de Balas-Hammer.
+    * :param tab_matrix: La matrice du problème de transport
+    * :param complexity_calculation: Un booléen pour savoir si le mode est en mode calcul de complexité (retire les interactions avec l'utilisateur)
+    * :return: La matrice du problème de transport résolu
+    """
     # Initialisation des variables
     num_provisions = len(tab_matrix[1])
     num_orders = len(tab_matrix[2])
@@ -23,20 +31,22 @@ def balashammer(tab_matrix, complexity_calculation=False):
     confirm = None
     k = 1
     while sum(list_provisions) != 0 and sum(list_orders) != 0:
-        """if not complexity_calculation:
+        if not complexity_calculation:
             while confirm not in ['y', 'n']:
                 confirm = input(colored("Souhaitez-vous afficher les itérations ? (y/n)... ", "magenta"))
                 if confirm not in ['y', 'n']:
                     print(colored("Le choix n'a pas été reconnue.", "red"))
         else:
             confirm = 'n'
-        """
+
         if confirm == 'y' and not complexity_calculation:
             print(colored("\n* Itération n°" + str(k), attrs=["bold", "underline"]))
-        k += 1
 
+        # Initialisation des variables
+        k += 1
         penalties = []
 
+        # Calcul des pénalités pour chaque ligne
         for i in range(num_provisions):
             row = [tab_matrix[0][i][j][1] for j in range(num_orders) if list_provisions[i] > 0 if list_orders[j] > 0]
             if len(row) > 1:
@@ -45,6 +55,7 @@ def balashammer(tab_matrix, complexity_calculation=False):
             else:
                 penalties.append((float('-inf'), i, None))
 
+        # Calcul des pénalités pour chaque colonne
         for j in range(num_orders):
             column = [tab_matrix[0][i][j][1] for i in range(num_provisions) if list_orders[j] > 0 if list_provisions[i] > 0]
             if len(column) > 1:
@@ -53,9 +64,11 @@ def balashammer(tab_matrix, complexity_calculation=False):
             else:
                 penalties.append((float('-inf'), j, None))
 
-        # Max Penalty
+        # On fait des candidats pour les pénalités
+        # On prend le ou les maximums des pénalités
         candidates = max_penalties(penalties)
 
+        # Si on a un seul candidat, on le prend
         if len(candidates) == 1:
             if candidates[0][0] == float('-inf'):
                 for i in range(num_provisions):
@@ -67,6 +80,7 @@ def balashammer(tab_matrix, complexity_calculation=False):
             else:
                 max_penalty, max_index, mode = candidates[0][0], candidates[0][1], candidates[0][2]
         else:
+            # Tri des candidats par maximum de stockage possible
             final_candidates = []
             min_cost_index = 0
             min_cost = -1
@@ -86,14 +100,14 @@ def balashammer(tab_matrix, complexity_calculation=False):
                                 min_cost = tab_matrix[0][j][index][1]
                     final_candidates.append([min(list_provisions[min_cost_index], list_orders[index]), min_cost])
 
-            # Choix du maximum, si plusieurs candidats à égalité, on prend le coût minimum
+            # Choix du maximum, si plusieurs candidats à égalité, on prend le coût minimum (choix arbitraire)
             if len(candidates) > 1:
                 max_penalty, max_index, mode = resolve_ties(candidates, tab_matrix, list_provisions, list_orders)
             else:
                 max_penalty, max_index, mode = candidates[0][0], candidates[0][1], candidates[0][2]
 
         min_quantity, min_index = float('inf'), -1
-        # input(colored("Appuyez sur une touche pour continuer...", "magenta"))
+        input(colored("Appuyez sur une touche pour continuer...", "magenta")) if not complexity_calculation and confirm == 'y' else None
         # Affichage à chaque étape
         if confirm == 'y':
             print_penalty = [[], [], [], []]
@@ -152,12 +166,20 @@ def balashammer(tab_matrix, complexity_calculation=False):
             if not complexity_calculation:
                 display_tab_matrix([balas_hammer_matrix, tab_matrix[1], tab_matrix[2]], "Balas-Hammer", option="balas_hammer", optionvalue=print_penalty)
 
+    # Affichage du nombre d'itérations
     if not complexity_calculation:
         print(colored("\n* Fin en " + str(k) + " itérations.", attrs=["bold", "underline"]))
     return [balas_hammer_matrix, tab_matrix[1], tab_matrix[2]]
 
 
 def max_penalties(penalties):
+    """
+    * Fonction : max_penalties
+    * ----------------------
+    * Cette fonction permet de récupérer les pénalités maximales.
+    * :param penalties: La liste des pénalités
+    * :return: La liste des pénalités maximales
+    """
     candidates = []
     max_penalty = float('-inf')
     max_index = -1
@@ -177,6 +199,18 @@ def max_penalties(penalties):
 
 
 def resolve_ties(candidates, tab_matrix, list_provisions, list_orders):
+    """
+    * Fonction : resolve_ties
+    * ----------------------
+    * Cette fonction permet de résoudre les égalités des candidats.
+    * Choix arbitraire : On prend le candidat avec le coût minimum.
+    * :param candidates: La liste des candidats
+    * :param tab_matrix: La matrice du problème de transport
+    * :param list_provisions: La liste des provisions
+    * :param list_orders: La liste des commandes
+    * :return: Le candidat sélectionné
+    """
+    # On prend le candidat avec le coût minimum
     min_cost = float('inf')
     selected_candidate = None
     for penalty, index, mode in candidates:
@@ -187,8 +221,10 @@ def resolve_ties(candidates, tab_matrix, list_provisions, list_orders):
         else:
             continue
 
+        # On prend le coût minimum
         local_min = min(costs) if costs else float('inf')
 
+        # Si le coût minimum est inférieur au coût actuel, on le prend
         if local_min < min_cost:
             min_cost = local_min
             selected_candidate = (penalty, index, mode)
